@@ -119,4 +119,40 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  h1,
+  .h1 {
+    @apply text-[2rem] leading-tight font-black;
+  }
+  h2,
+  .h2 {
+    @apply text-[1.75rem] leading-tight font-bold;
+  }
+  h3,
+  .h3 {
+    @apply text-[1.5rem] leading-tight font-bold;
+  }
+  h4,
+  .h4 {
+    @apply text-[1.25rem] leading-tight font-bold;
+  }
+  h5,
+  .h5 {
+    @apply text-[1.125rem] leading-tight font-bold;
+  }
+  h6,
+  .h6 {
+    @apply text-[1.125rem] leading-tight font-bold;
+  }
+  p,
+  .p {
+    @apply text-[1rem] leading-normal font-normal;
+  }
+  small,
+  .small {
+    @apply text-[0.875rem] leading-normal font-normal;
+  }
+  .smaller {
+    @apply text-[0.75rem] leading-normal font-normal;
+  }
 }
