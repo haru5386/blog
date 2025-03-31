@@ -3,13 +3,10 @@ import { MDXRemote } from 'next-mdx-remote/rsc';
 import rehypePrettyCode from 'rehype-pretty-code';
 import { getPostBySlug, getAllPosts } from '@/lib/blog-utils';
 
-
-interface Props {
-  params: {
-    category: string;
-    slug: string;
-  };
-}
+type Params = Promise<{
+  category: string;
+  slug: string;
+}>
 
 export async function generateStaticParams() {
   const posts = await getAllPosts();
@@ -19,7 +16,9 @@ export async function generateStaticParams() {
   }));
 }
 
-export default async function PostPage({ params }: Props) {
+export default async function PostPag(
+  { params }: { params: Params }
+){
   const { category, slug } = await params
   const post = await getPostBySlug(category, slug);
 

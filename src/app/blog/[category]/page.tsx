@@ -1,12 +1,16 @@
 import Link from 'next/link';
 import { getPostsByCategory, getAllCategories } from '@/lib/blog-utils';
+import { PostCard } from '@/components/blog/post-card';
+import { Pagination } from '@/components/ui/pagination';
 import type { BlogPost } from '@/types/blog';
 
-interface Props {
-  params: {
-    category: string;
-  };
-}
+
+type Params = Promise<{
+  category: string;
+  page?: string[];
+}>
+
+const POSTS_PER_PAGE = 10;
 
 export async function generateStaticParams() {
   const categories = await getAllCategories();
@@ -15,8 +19,17 @@ export async function generateStaticParams() {
   }));
 }
 
-export default async function CategoryPage({ params }: Props) {
-  const posts = await getPostsByCategory(params.category);
+export default async function CategoryPage(  
+  { params }: { params: Params }
+) {
+  const { category, page } = await params;
+  const posts = await getPostsByCategory(category);
+
+  const currentPage = page?.[0] ? parseInt(page[0]) : 1;
+  const startIndex = (currentPage - 1) * POSTS_PER_PAGE;
+  const endIndex = startIndex + POSTS_PER_PAGE;
+  const totalPages = Math.ceil(posts.length / POSTS_PER_PAGE);
+  const paginatedPosts = posts.slice(startIndex, endIndex);
 
   return (
     <div className="flex flex-col lg:flex-row gap-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -28,33 +41,18 @@ export default async function CategoryPage({ params }: Props) {
           Blog
         </Link>
         <span className="text-muted-foreground">/</span>
-        <h1 className="text-2xl font-bold">{params.category}</h1>
+        <h1 className="text-2xl font-bold">{category}</h1>
       </div>
 
-      <div className="grid gap-8 ">
-        {posts.map((post: BlogPost) => (
-          <article key={post.slug} className="group  hover:bg-slate-100 dark:hover:bg-slate-900 rounded-md p-4 transition-colors">
-            <Link href={`/blog/${post.category}/${post.slug}`}>
-              <h2 className="text-2xl font-semibold group-hover:text-primary transition-colors mb-2">
-                {post.title}
-              </h2>
-              <div className="flex gap-4 text-sm text-muted-foreground mb-4">
-                <time dateTime={post.date}>{post.date}</time>
-              </div>
-              <p className="text-muted-foreground">{post.abstract}</p>
-              <div className="flex gap-2 mt-4">
-                {post.tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="text-xs px-2 py-1 bg-muted rounded-full"
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            </Link>
-          </article>
+      <div className="grid gap-8">
+        {paginatedPosts.map((post: BlogPost) => (
+          <PostCard key={post.slug} post={post} />
         ))}
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          basePath={`/blog/${category}`}
+        />
       </div>
     </div>
   );
