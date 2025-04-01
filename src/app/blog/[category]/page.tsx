@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { getPostsByCategory, getAllCategories } from '@/lib/blog-utils';
 import { PostCard } from '@/components/blog/post-card';
-import { Pagination } from '@/components/ui/pagination';
+import PaginationWrapper from '@/components/custom/pagination/paginationWrapper';
 import type { BlogPost } from '@/types/blog';
 
 
@@ -48,11 +48,8 @@ export default async function CategoryPage(
         {paginatedPosts.map((post: BlogPost) => (
           <PostCard key={post.slug} post={post} />
         ))}
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          basePath={`/blog/${category}`}
-        />
+          <PaginationWrapper  currentPage={currentPage} totalPages={totalPages} path={`/blog/${category}`} />
+
       </div>
     </div>
   );

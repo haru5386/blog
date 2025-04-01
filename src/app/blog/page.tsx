@@ -1,19 +1,16 @@
 import Link from 'next/link';
 import { getAllPosts, getAllCategories } from '@/lib/blog-utils';
 import { PostCard } from '@/components/blog/post-card';
-import { Pagination } from '@/components/ui/pagination';
-
-type Params = Promise<{ page?: string[] }>
+import PaginationWrapper from '@/components/custom/pagination/paginationWrapper';
 
 
 const POSTS_PER_PAGE = 10;
 
-export default async function Blog({ params }: { params: Params }) {
-  const { page } = await params
+export default async function Blog({ searchParams }: { searchParams: { page?: string } }) {
   const posts = await getAllPosts();
   const categories = await getAllCategories();
 
-  const currentPage = page?.[0] ? parseInt(page[0]) : 1;
+  const currentPage = searchParams.page?.[0] ? parseInt(searchParams.page[0]) : 1;
   const startIndex = (currentPage - 1) * POSTS_PER_PAGE;
   const endIndex = startIndex + POSTS_PER_PAGE;
   const totalPages = Math.ceil(posts.length / POSTS_PER_PAGE);
@@ -46,7 +43,7 @@ export default async function Blog({ params }: { params: Params }) {
           {paginatedPosts.map((post) => (
             <PostCard key={post.slug} post={post} />
           ))}
-          <Pagination currentPage={currentPage} totalPages={totalPages} basePath="/blog" />
+          <PaginationWrapper  currentPage={currentPage} totalPages={totalPages} path="/blog" />
         </div>
       </main>
     </div>
