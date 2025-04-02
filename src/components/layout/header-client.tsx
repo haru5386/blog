@@ -27,8 +27,8 @@ export function HeaderClient({ posts }: HeaderClientProps) {
         <div className="flex h-16 items-center justify-between">
           <div className="flex items-center space-x-6">
             <Link href="/" className="flex items-center space-x-2">
-              <Icon icon="carbon:blog" className="h-8 w-8" />
-              <span className={`${josefinSans.className} font-bold text-xl hidden sm:inline-block`}>My Blog</span>
+              <Icon icon="carbon:circle-filled" className="h-8 w-8  text-red-300 dark:text-blue-400" />
+              <span className={`${josefinSans.className} font-bold text-xl hidden sm:inline-block bg-clip-text text-transparent bg-gradient-to-r from-red-300  via-pink-400 via-purple-400 to-blue-400`}>My Blog</span>
             </Link>
             <nav className="hidden md:flex items-center space-x-6">
               <Link

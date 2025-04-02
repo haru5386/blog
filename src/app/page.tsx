@@ -3,9 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { useTheme } from "next-themes";
 import "@/styles/y2k.css";
-import Link from "next/link";
 
 export default function Home() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -13,7 +11,6 @@ export default function Home() {
   const cursorPatternRef = useRef<HTMLDivElement>(null);
   const sectionsRef = useRef<HTMLDivElement[]>([]);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  const { theme } = useTheme();
   
   // Register ScrollTrigger plugin
   useEffect(() => {
@@ -76,13 +73,6 @@ export default function Home() {
       duration: 0.7,
       ease: "power2.out"
     }, "-=0.5")
-    .from(".y2k-button", {
-      opacity: 0,
-      scale: 0,
-      stagger: 0.2,
-      duration: 0.5,
-      ease: "back.out(1.7)"
-    }, "-=0.3");
     
     return () => {
       window.removeEventListener("mousemove", handleMouseMove);
@@ -119,65 +109,51 @@ export default function Home() {
       </div>
       
       {/* Hero Section with Mask Reveal */}
-      <section className="mask-container">
+      <section className="relative w-full h-screen overflow-hidden">
         <div 
-          className="mask-bg"
-          style={{ 
-            backgroundImage: theme === 'dark' 
-              ? "url('/images/y2k-bg.jpg')" 
-              : "url('/images/y2k-bg-light.jpg')",
-            backgroundSize: "cover",
-            backgroundPosition: "center"
-          }}
+          className="absolute w-full h-full bg-cover bg-center z-1 mask-bg"
         />
         <div ref={maskRef} className="mask-overlay" />
-        <div className="mask-content">
-          <h1 className="y2k-title mb-6">WindsurfPro</h1>
+        <div className="relative z-3 flex flex-col justify-center items-center h-full p-8 text-center">
+          <h1 className="y2k-title text-[4rem] font-bold bg-gradient-to-r from-[var(--y2k-primary)] via-[var(--y2k-secondary)] to-[var(--y2k-accent)] bg-clip-text text-transparent animate-y2k-text-shine mb-6">
+            Welcome to My Blog
+            </h1>
           <p className="y2k-subtitle text-xl mb-8 y2k-text-shadow">
-            A retro-futuristic Y2K blog experience
+            Let's do something together!
           </p>
-          <div className="flex space-x-4">
-            <Link href="/blog" className="y2k-button">
-              Enter Blog
-            </Link>
-            <button className="y2k-button">
-              Subscribe
-            </button>
-          </div>
+          
         </div>
       </section>
       
       {/* About Section */}
       <section 
         ref={addToRefs} 
-        className="y2k-section y2k-gradient-bg"
+        className="min-h-screen flex flex-col justify-center items-center relative overflow-hidden y2k-gradient-bg"
       >
         <div className="y2k-grid"></div>
         <div className="y2k-stars"></div>
         <div className="max-w-4xl mx-auto text-center p-8 z-10">
-          <h2 className="text-3xl font-bold mb-6 y2k-text-shadow">About WindsurfPro</h2>
-          <div className="y2k-border p-6 backdrop-blur-sm bg-black/30 dark:bg-white/10">
+          <h2 className="text-3xl font-bold mb-6 y2k-text-shadow">About Me</h2>
+          <div className="y2k-border p-6 backdrop-blur-sm bg-blue-300/30 dark:bg-white/10">
             <p className="mb-4">
-              Welcome to the digital time capsule of Y2K aesthetics and modern content.
-              WindsurfPro blends nostalgic web design with cutting-edge technology.
+            嗨，我是 Chloe，從設計的世界跨足到前端開發，一步步探索數位體驗的可能性。<br></br>
+            這裡紀錄我的學習、技術筆記、設計靈感，偶爾也會分享一些沒什麼營養的碎碎念。<br></br>
+            希望這些內容能對你有點幫助，或者至少讓你會心一笑。
             </p>
             <p>
-              Explore our blog for the latest articles on technology, design, and culture,
-              all wrapped in the iconic visual language of the early 2000s internet.
+            Hi, I'm Chloe. I transitioned from designer to frontend engineer, <br></br>
+            exploring the possibilities of digital experiences step by step. <br></br>
+            Here, I write down some occasional ramblings that may not be all that useful. <br></br>
+            Hopefully, you'll find something helpful here—or at least something that makes you smile.<br></br>
             </p>
           </div>
         </div>
       </section>
       
       {/* Features Section */}
-      <section 
+      {/* <section 
         ref={addToRefs} 
-        className="y2k-section"
-        style={{ 
-          background: theme === 'dark'
-            ? "linear-gradient(to bottom, #000066, #660066)"
-            : "linear-gradient(to bottom, #e6e6ff, #ff99ff)"
-        }}
+        className="y2k-section bg-gradient-to-b from-[#fff9fe] to-[#ff99ff] dark:from-[#000066] dark:to-[#660066]"
       >
         <div className="container mx-auto p-8 z-10">
           <h2 className="text-3xl font-bold mb-10 text-center y2k-text-shadow">Featured Content</h2>
@@ -193,17 +169,12 @@ export default function Home() {
             ))}
           </div>
         </div>
-      </section>
+      </section> */}
       
       {/* Contact Section */}
-      <section 
+      {/* <section 
         ref={addToRefs} 
-        className="y2k-section"
-        style={{ 
-          background: theme === 'dark'
-            ? "linear-gradient(to bottom, #660066, #000033)"
-            : "linear-gradient(to bottom, #ff99ff, #e6e6ff)"
-        }}
+        className="min-h-screen flex flex-col justify-center items-center relative overflow-hidden bg-gradient-to-b from-[#fff9fe] to-[#ff99ff] dark:from-[#000066] dark:to-[#660066]"
       >
         <div className="y2k-stars"></div>
         <div className="container mx-auto p-8 z-10 max-w-2xl">
@@ -222,7 +193,7 @@ export default function Home() {
             </div>
           </div>
         </div>
-      </section>
+      </section> */}
     </div>
   );
 }

@@ -95,7 +95,7 @@
 }
 
 .y2k-gradient-bg {
-  background: linear-gradient(45deg, var(--y2k-bg), #6666cc, #9999ff);
+  background: linear-gradient(45deg, var(--y2k-bg), #6666cc, #b5b5f7);
   background-size: 400% 400%;
   animation: y2k-gradient 15s ease infinite;
 }
@@ -126,38 +126,6 @@
 .y2k-border {
   border: 2px solid;
   border-image: linear-gradient(45deg, var(--y2k-primary), var(--y2k-secondary)) 1;
-}
-
-.y2k-button {
-  background: linear-gradient(90deg, var(--y2k-primary), var(--y2k-secondary));
-  color: var(--y2k-text);
-  font-weight: bold;
-  padding: 0.5rem 1.5rem;
-  border-radius: 4px;
-  border: 2px solid #ffffff;
-  box-shadow: 0 0 10px rgba(255, 0, 255, 0.5);
-  transition: all 0.3s ease;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-.dark .y2k-button {
-  border: 2px solid #000066;
-}
-
-.y2k-button:hover {
-  transform: scale(1.05);
-  box-shadow: 0 0 15px rgba(255, 0, 255, 0.8);
-}
-
-.y2k-section {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  position: relative;
-  overflow: hidden;
 }
 
 .y2k-grid {
@@ -192,35 +160,26 @@
   background-image: radial-gradient(white 1px, transparent 1px);
 }
 
-.y2k-title {
-  font-size: 4rem;
-  font-weight: bold;
-  background: linear-gradient(90deg, var(--y2k-primary), var(--y2k-secondary), var(--y2k-accent));
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-size: 200% auto;
+
+.animate-y2k-text-shine {
   animation: y2k-text-shine 3s linear infinite;
+  background-size: 200% auto;
 }
 
 @keyframes y2k-text-shine {
   to { background-position: 200% center; }
 }
 
-.mask-container {
-  position: relative;
-  width: 100%;
-  height: 100vh;
-  overflow: hidden;
-}
-
 .mask-bg {
-  position: absolute;
-  width: 100%;
-  height: 100%;
+  background-image: url('/images/y2k-bg-light.jpg');
   background-size: cover;
   background-position: center;
-  z-index: 1;
+}
+.dark .mask-bg {
+  background-image: url('/images/y2k-bg.jpg');
+  background-size: cover;
+  background-position: center;
+
 }
 
 .mask-overlay {
@@ -234,14 +193,3 @@
   -webkit-mask-image: radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), transparent 100px, black 200px);
 }
 
-.mask-content {
-  position: relative;
-  z-index: 3;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  height: 100%;
-  padding: 2rem;
-  text-align: center;
-}
