@@ -30,7 +30,7 @@ export default async function Blog({
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
-            <BreadcrumbLink href={`/blog/${category}`} className="text-[20px] font-bold text-black">{category}</BreadcrumbLink>
+            <BreadcrumbLink href={`/blog/${category}`} className="text-[20px] font-bold text-black dark:text-gray-400 dark:hover:text-white">{category}</BreadcrumbLink>
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>

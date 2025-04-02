@@ -119,7 +119,7 @@ export default function Home() {
             Welcome to My Blog
             </h1>
           <p className="y2k-subtitle text-xl mb-8 y2k-text-shadow">
-            Let's do something together!
+            Let&apos;s do something together!
           </p>
           
         </div>
@@ -141,10 +141,10 @@ export default function Home() {
             希望這些內容能對你有點幫助，或者至少讓你會心一笑。
             </p>
             <p>
-            Hi, I'm Chloe. I transitioned from designer to frontend engineer, <br></br>
+            Hi, I&apos;m Chloe. I transitioned from designer to frontend engineer, <br></br>
             exploring the possibilities of digital experiences step by step. <br></br>
             Here, I write down some occasional ramblings that may not be all that useful. <br></br>
-            Hopefully, you'll find something helpful here—or at least something that makes you smile.<br></br>
+            Hopefully, you&apos;ll find something helpful here—or at least something that makes you smile.<br></br>
             </p>
           </div>
         </div>
