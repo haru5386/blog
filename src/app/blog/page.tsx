@@ -5,10 +5,11 @@ import PaginationWrapper from '@/components/custom/pagination/paginationWrapper'
 
 const POSTS_PER_PAGE = 10;
 
-export default async function Blog({ searchParams }: { searchParams: { page?: string } }) {
+export default async function Blog({ searchParams }: { searchParams: Promise<{ page?: string }> }) {
   const posts = await getAllPosts();
+  const { page } = await searchParams
 
-  const currentPage = searchParams.page?.[0] ? parseInt(searchParams.page[0]) : 1;
+  const currentPage = page?.[0] ? parseInt(page[0]) : 1;
   const startIndex = (currentPage - 1) * POSTS_PER_PAGE;
   const endIndex = startIndex + POSTS_PER_PAGE;
   const totalPages = Math.ceil(posts.length / POSTS_PER_PAGE);
