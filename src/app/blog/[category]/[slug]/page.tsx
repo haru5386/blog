@@ -37,24 +37,8 @@ export default async function PostPag(
   }
 
   return (
-    <div className="flex flex-col space-y-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <main className="flex-1 max-w-4xl">
       <div className="max-w-4xl mx-auto w-full">
-
-      <div className="flex items-center gap-4">
-        <Link
-          href="/blog"
-          className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          Blog
-        </Link>
-        <span className="text-muted-foreground">/</span>
-        <Link
-          href={`/blog/${post.category}`}
-          className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          {post.category}
-        </Link>
-      </div>
 
       <article>
         <h1>{post.title}</h1>
@@ -104,6 +88,6 @@ export default async function PostPag(
         />
       </article>
       </div>
-    </div>
+    </main>
   );
 }
