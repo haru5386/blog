@@ -1,4 +1,5 @@
 "use client";
+import { Josefin_Sans } from "next/font/google";
 
 import { useState } from 'react';
 import Link from 'next/link';
@@ -8,6 +9,12 @@ import { MobileMenu } from './mobile-menu';
 import { Icon } from '@iconify/react';
 import type { BlogPost } from '@/types/blog';
 
+const josefinSans= Josefin_Sans(
+  {
+    variable: "--font-josefin-sans",
+    subsets: ["latin"],
+  }
+)
 interface HeaderClientProps {
   posts: BlogPost[];
 }
@@ -21,7 +28,7 @@ export function HeaderClient({ posts }: HeaderClientProps) {
           <div className="flex items-center space-x-6">
             <Link href="/" className="flex items-center space-x-2">
               <Icon icon="carbon:blog" className="h-8 w-8" />
-              <span className="font-bold text-xl hidden sm:inline-block">My Blog</span>
+              <span className={`${josefinSans.className} font-bold text-xl hidden sm:inline-block`}>My Blog</span>
             </Link>
             <nav className="hidden md:flex items-center space-x-6">
               <Link

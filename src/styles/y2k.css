@@ -1,0 +1,247 @@
+/* Y2K Style CSS */
+
+
+/* Cursor follower pattern */
+.cursor-pattern {
+  position: fixed;
+  pointer-events: none;
+  width: 150px;
+  height: 150px;
+  z-index: 9999;
+  mix-blend-mode: screen;
+  will-change: transform;
+  transform: translate(-50%, -50%);
+}
+
+.cursor-pattern-element {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  opacity: 0.8;
+  transform-origin: center;
+}
+
+.cursor-pattern-1 {
+  background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='50' cy='50' r='45' fill='none' stroke='%23ff00ff' stroke-width='2' stroke-dasharray='10 5'/%3E%3C/svg%3E");
+  animation: spin 8s linear infinite;
+}
+
+.cursor-pattern-2 {
+  background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolygon points='50,10 90,90 10,90' fill='none' stroke='%2300ffff' stroke-width='2' stroke-dasharray='5 3'/%3E%3C/svg%3E");
+  animation: spin-reverse 6s linear infinite;
+}
+
+.cursor-pattern-3 {
+  background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='20' y='20' width='60' height='60' fill='none' stroke='%23ffff00' stroke-width='2' stroke-dasharray='8 4' rx='5' ry='5'/%3E%3C/svg%3E");
+  animation: pulse 3s ease-in-out infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes spin-reverse {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(-360deg); }
+}
+
+@keyframes pulse {
+  0% { transform: scale(0.8); opacity: 0.5; }
+  50% { transform: scale(1.2); opacity: 0.8; }
+  100% { transform: scale(0.8); opacity: 0.5; }
+}
+
+:root {
+  /* Light mode Y2K colors */
+  --y2k-primary-light: #c020c0;
+  --y2k-secondary-light: #00ffff;
+  --y2k-accent-light: #ffff00;
+  --y2k-bg-light: #e6e6ff;
+  --y2k-text-light: #000066;
+  --y2k-overlay-light: rgba(230, 230, 255, 0.8);
+  
+  /* Dark mode Y2K colors */
+  --y2k-primary-dark: #bc26bc;
+  --y2k-secondary-dark: #00ffff;
+  --y2k-accent-dark: #ffff00;
+  --y2k-bg-dark: #000033;
+  --y2k-text-dark: #ffffff;
+  --y2k-overlay-dark: rgba(0, 0, 51, 0.8);
+}
+
+.y2k-container {
+  --y2k-primary: var(--y2k-primary-light);
+  --y2k-secondary: var(--y2k-secondary-light);
+  --y2k-accent: var(--y2k-accent-light);
+  --y2k-bg: var(--y2k-bg-light);
+  --y2k-text: var(--y2k-text-light);
+  --y2k-overlay: var(--y2k-overlay-light);
+  
+  color: var(--y2k-text);
+  font-family: 'Roboto Mono', monospace;
+}
+
+.dark .y2k-container {
+  --y2k-primary: var(--y2k-primary-dark);
+  --y2k-secondary: var(--y2k-secondary-dark);
+  --y2k-accent: var(--y2k-accent-dark);
+  --y2k-bg: var(--y2k-bg-dark);
+  --y2k-text: var(--y2k-text-dark);
+  --y2k-overlay: var(--y2k-overlay-dark);
+}
+
+.y2k-gradient-bg {
+  background: linear-gradient(45deg, var(--y2k-bg), #6666cc, #9999ff);
+  background-size: 400% 400%;
+  animation: y2k-gradient 15s ease infinite;
+}
+
+.dark .y2k-gradient-bg {
+  background: linear-gradient(45deg, var(--y2k-bg), #000066, #000099);
+  background-size: 400% 400%;
+  animation: y2k-gradient 15s ease infinite;
+}
+
+@keyframes y2k-gradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.y2k-text-shadow {
+  text-shadow: 
+    2px 2px 0 var(--y2k-primary),
+    -2px -2px 0 var(--y2k-secondary);
+}
+
+.y2k-glow {
+  filter: drop-shadow(0 0 5px var(--y2k-primary)) 
+         drop-shadow(0 0 10px var(--y2k-secondary));
+}
+
+.y2k-border {
+  border: 2px solid;
+  border-image: linear-gradient(45deg, var(--y2k-primary), var(--y2k-secondary)) 1;
+}
+
+.y2k-button {
+  background: linear-gradient(90deg, var(--y2k-primary), var(--y2k-secondary));
+  color: var(--y2k-text);
+  font-weight: bold;
+  padding: 0.5rem 1.5rem;
+  border-radius: 4px;
+  border: 2px solid #ffffff;
+  box-shadow: 0 0 10px rgba(255, 0, 255, 0.5);
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.dark .y2k-button {
+  border: 2px solid #000066;
+}
+
+.y2k-button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 15px rgba(255, 0, 255, 0.8);
+}
+
+.y2k-section {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.y2k-grid {
+  position: absolute;
+  width: 200%;
+  height: 200%;
+  background-image: 
+    linear-gradient(rgba(255, 0, 255, 0.3) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 255, 255, 0.3) 1px, transparent 1px);
+  background-size: 50px 50px;
+  transform: perspective(500px) rotateX(60deg);
+  animation: y2k-grid-move 20s linear infinite;
+  z-index: -1;
+}
+
+.dark .y2k-grid {
+  background-image: 
+    linear-gradient(rgba(255, 0, 255, 0.3) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 255, 255, 0.3) 1px, transparent 1px);
+}
+
+.y2k-stars {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-image: radial-gradient(#6666cc 1px, transparent 1px);
+  background-size: 50px 50px;
+  z-index: -2;
+}
+
+.dark .y2k-stars {
+  background-image: radial-gradient(white 1px, transparent 1px);
+}
+
+.y2k-title {
+  font-size: 4rem;
+  font-weight: bold;
+  background: linear-gradient(90deg, var(--y2k-primary), var(--y2k-secondary), var(--y2k-accent));
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-size: 200% auto;
+  animation: y2k-text-shine 3s linear infinite;
+}
+
+@keyframes y2k-text-shine {
+  to { background-position: 200% center; }
+}
+
+.mask-container {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.mask-bg {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  z-index: 1;
+}
+
+.mask-overlay {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-color: var(--y2k-overlay);
+  mix-blend-mode: multiply;
+  z-index: 2;
+  mask-image: radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), transparent 100px, black 200px);
+  -webkit-mask-image: radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), transparent 100px, black 200px);
+}
+
+.mask-content {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  padding: 2rem;
+  text-align: center;
+}
