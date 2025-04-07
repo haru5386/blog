@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { MDXRemote } from 'next-mdx-remote/rsc';
 import rehypePrettyCode from 'rehype-pretty-code';
 import { getPostBySlug, getAllPosts } from '@/lib/blog-utils';
+import { mdxComponents } from "@/components/blog/mdx-components";
 
 type Params = Promise<{
   category: string;
@@ -37,12 +38,12 @@ export default async function PostPag(
   }
 
   return (
-    <main className="flex-1 max-w-4xl">
-      <div className="max-w-4xl mx-auto w-full">
+    <main className="flex-1 md:max-w-4xl max-w-[calc(100vw-48px)]">
+      <div className="md:max-w-4xl mx-auto max-w-[calc(100vw-48px)]">
 
       <article>
         <h1>{post.title}</h1>
-        <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mb-12 border-b border-border pb-6">
+        <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mt-4 mb-8 border-b border-border pb-6">
           <time dateTime={post.date}>{post.date}</time>
           <div className="flex gap-2">
             {post.tags.map((tag) => (
@@ -61,30 +62,13 @@ export default async function PostPag(
             mdxOptions: {
               rehypePlugins: [
                 [rehypePrettyCode, {
-                  theme: 'github-dark',
-                  keepBackground: true,
+                  theme: 'github-light',
+                  keepBackground: false,
                 }],
               ],
             },
           }}
-          components={{
-            pre: ({ children, ...props }) => (
-              <pre
-                className="overflow-x-auto rounded-lg p-4 my-4 bg-[#0d1117] text-[#e6edf3]"
-                {...props}
-              >
-                {children}
-              </pre>
-            ),
-            code: ({ children, ...props }) => (
-              <code
-                className="rounded bg-[#0d1117]/50 px-1.5 py-0.5 text-[0.9em] font-mono"
-                {...props}
-              >
-                {children}
-              </code>
-            ),
-          }}
+          components={mdxComponents}
         />
       </article>
       </div>
