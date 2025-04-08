@@ -3,7 +3,7 @@ import { MDXRemote } from 'next-mdx-remote/rsc';
 import rehypePrettyCode from 'rehype-pretty-code';
 import { getPostBySlug, getAllPosts } from '@/lib/blog-utils';
 import { mdxComponents } from "@/components/blog/mdx-components";
-
+import TransferUTF from '@/components/blog/transferUTF'
 type Params = Promise<{
   category: string;
   slug: string;
@@ -71,6 +71,7 @@ export default async function PostPag(
           components={mdxComponents}
         />
       </article>
+      <TransferUTF />
       </div>
     </main>
   );
