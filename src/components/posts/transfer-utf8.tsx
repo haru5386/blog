@@ -15,7 +15,7 @@ export default function BitConverterTool() {
   const { hex, bits } = getUtf8HexAndBits(char);
 
   return (
-    <div className="max-w-md mx-auto p-4 bg-white rounded-xl shadow-md">
+    <div className="max-w-md mx-auto p-4 bg-white dark:bg-slate-900 rounded-xl shadow-md">
       <h1 className="text-xl font-bold mb-4">🔤 UTF-8 位元轉換小工具</h1>
       <label className="block mb-2 font-medium">請輸入一個字元：</label>
       <input

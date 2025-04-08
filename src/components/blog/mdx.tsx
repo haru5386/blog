@@ -55,7 +55,7 @@ export const mdxComponents: MDXComponents = {
   a: CustomLink,
   pre: ({ children, ...props }) => (
     <pre
-      className="overflow-x-auto rounded-lg p-4 my-4 bg-gray-100 text-[#e6edf3]"
+      className="overflow-x-auto rounded-lg p-4 my-4 bg-gray-100 dark:bg-gray-300 text-[#e6edf3]  "
       {...props}
     >
         {children}
@@ -63,7 +63,7 @@ export const mdxComponents: MDXComponents = {
   ),
   code: ({ children, ...props }) => (
     <code
-      className="rounded bg-gray-100 px-1.5 py-0.5 text-[0.9em] font-mono text-[#032F62]"
+      className="rounded bg-gray-100  px-1.5 py-0.5 text-[0.9em] dark:bg-gray-300 font-mono text-[#032F62] "
       {...props}
     >
       {children}
