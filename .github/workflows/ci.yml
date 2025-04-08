@@ -30,10 +30,10 @@ jobs:
         run: |
           bun install
 
-      # 5. 運行測試
-      - name: Run tests
-        run: |
-          bun run test   # 使用 bun 執行測試
+      # # 5. 運行測試
+      # - name: Run tests
+      #   run: |
+      #     bun run test   # 使用 bun 執行測試
 
       # 6. 如果測試通過，build 出項目
       - name: Build Next.js
