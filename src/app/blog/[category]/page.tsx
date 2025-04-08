@@ -1,6 +1,6 @@
 import { getPostsByCategory, getAllCategories } from '@/lib/blog-utils';
 import { PostCard } from '@/components/blog/post-card';
-import PaginationWrapper from '@/components/custom/pagination/paginationWrapper';
+import PaginationWrapper from '@/components/ui/pagination/paginationWrapper';
 import type { BlogPost } from '@/types/blog';
 
 

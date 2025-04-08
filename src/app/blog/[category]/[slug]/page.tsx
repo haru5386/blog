@@ -1,9 +1,6 @@
 import Link from 'next/link';
-import { MDXRemote } from 'next-mdx-remote/rsc';
-import rehypePrettyCode from 'rehype-pretty-code';
 import { getPostBySlug, getAllPosts } from '@/lib/blog-utils';
-import { mdxComponents } from "@/components/blog/mdx-components";
-import TransferUTF from '@/components/blog/transferUTF'
+import { CustomMDX } from '@/components/blog/mdx'
 type Params = Promise<{
   category: string;
   slug: string;
@@ -56,22 +53,8 @@ export default async function PostPag(
             ))}
           </div>
         </div>
-        <MDXRemote
-          source={post.content}
-          options={{
-            mdxOptions: {
-              rehypePlugins: [
-                [rehypePrettyCode, {
-                  theme: 'github-light',
-                  keepBackground: false,
-                }],
-              ],
-            },
-          }}
-          components={mdxComponents}
-        />
+        <CustomMDX source={post.content} />
       </article>
-      <TransferUTF />
       </div>
     </main>
   );

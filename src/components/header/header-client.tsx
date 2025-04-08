@@ -4,7 +4,7 @@ import { Josefin_Sans } from "next/font/google";
 import { useState } from 'react';
 import Link from 'next/link';
 import { Search } from '@/components/blog/search';
-import { ModeToggle } from '@/components/mode-toggle';
+import { ModeToggle } from '@/components/header/mode-toggle';
 import { MobileMenu } from './mobile-menu';
 import { Icon } from '@iconify/react';
 import type { BlogPost } from '@/types/blog';

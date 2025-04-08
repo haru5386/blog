@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import QuickPagination from '@/components/custom/pagination/pagination';
+import QuickPagination from '@/components/ui/pagination/pagination';
 
 export default function PaginationWrapper({ currentPage, totalPages, path }: { currentPage: number; totalPages: number; path: string}) {
   const router = useRouter();
