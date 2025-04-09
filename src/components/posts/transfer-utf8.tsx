@@ -26,8 +26,8 @@ export default function BitConverterTool() {
   const { hex: utf16Hex, bits: utf16Bits } = getUtf16HexAndBits(char);
 
   return (
-    <div className=" mx-auto p-4 bg-white dark:bg-slate-900 rounded-xl shadow-md w-full">
-      <h1 className="text-xl font-bold mb-4">🔤 UTF-8 / UTF-16 位元轉換工具</h1>
+    <div className=" mx-auto p-4 bg-white dark:bg-slate-600 rounded-xl shadow-md w-full">
+      <h1 className="text-xl font-bold mb-4">UTF-8 / UTF-16 位元轉換工具</h1>
       <label className="block mb-2 font-medium">請輸入一個字元：</label>
       <input
         type="text"
