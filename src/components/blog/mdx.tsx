@@ -5,6 +5,7 @@ import { MDXRemote, } from 'next-mdx-remote/rsc'
 import React from 'react'
 import { VFileCompatible } from 'vfile';
 import { getMDXPostComponents } from '@/lib/blog-utils'
+import remarkGfm from 'remark-gfm'
 
 interface CustomLinkProps extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
   href: string;
@@ -69,6 +70,18 @@ export const mdxComponents: MDXComponents = {
       {children}
     </code>
   ),
+  th: (props) => (
+    <th
+      className="px-4 py-2 text-left font-semibold bg-muted text-foreground border border-border"
+      {...props}
+    />
+  ),
+  td: (props) => (
+    <td
+      className="px-4 py-2 border border-border"
+      {...props}
+    />
+  ),
 }
 
 export async function CustomMDX(props: CustomMDXProps) {
@@ -76,8 +89,10 @@ export async function CustomMDX(props: CustomMDXProps) {
   return (
     <MDXRemote
       {...props}
+      
       options={{
         mdxOptions: {
+          remarkPlugins:[remarkGfm],
           rehypePlugins: [
             [rehypePrettyCode, {
               theme: 'github-light',

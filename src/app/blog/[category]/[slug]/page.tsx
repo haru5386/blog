@@ -35,7 +35,7 @@ export default async function PostPag(
   }
 
   return (
-    <main className="flex-1 md:max-w-4xl max-w-[calc(100vw-48px)]">
+    <main className="flex-1 md:max-w-4xl max-w-[calc(100vw-48px)] mb-10">
       <div className="md:max-w-4xl mx-auto max-w-[calc(100vw-48px)]">
 
       <article>

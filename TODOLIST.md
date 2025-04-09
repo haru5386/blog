@@ -10,9 +10,12 @@
 8. CSR vs SSR vsSSG
 9. html 無障礙
 10. 進位制 v
-11. 字元編碼
+11. 字元編碼 V
 12. JavaScript 的垃圾回收機制
 13. HTTP 協議：HTTP, HTTPS, TCP/IP | DNS、CDN、CORS、Cache、Cookie、Session、JWT | REST API vs GraphQL | WebSocket、SSE
+14. 資料夾結構
+15. vue底層寫法
+16. clean code
 
 # project
 1. 加上OG、seo
