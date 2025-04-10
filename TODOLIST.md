@@ -11,11 +11,12 @@
 9. html 無障礙
 10. 進位制 v
 11. 字元編碼 V
-12. JavaScript 的垃圾回收機制
+12. JavaScript 記憶體與儲存結構和垃圾回收機制 V
 13. HTTP 協議：HTTP, HTTPS, TCP/IP | DNS、CDN、CORS、Cache、Cookie、Session、JWT | REST API vs GraphQL | WebSocket、SSE
 14. 資料夾結構
 15. vue底層寫法
 16. clean code
+17. 處理程序（process）與執行緒（thread）
 
 # project
 1. 加上OG、seo
@@ -46,15 +47,6 @@
 
 👉 為什麼前端需要？
 處理 DOM 查找、Virtual DOM diffing、表單驗證、懶加載、搜尋時能選對資料結構與演算法，寫出效能更好的程式。
-
-3. 記憶體與儲存結構
-堆（heap）與棧（stack）
-
-原始型別 vs. 參考型別（primitive vs. reference）
-
-JavaScript 的垃圾回收機制（Garbage Collection）
-
-👉 瞭解 JS 中記憶體釋放問題、避免記憶體洩漏、理解閉包。
 
 4. 作業系統基本概念
 處理程序（process）與執行緒（thread）
