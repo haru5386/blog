@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { getPostBySlug, getAllPosts } from '@/lib/blog-utils';
+
 import { CustomMDX } from '@/components/blog/mdx'
 type Params = Promise<{
   category: string;
