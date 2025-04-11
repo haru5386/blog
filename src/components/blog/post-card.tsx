@@ -9,7 +9,7 @@ export function PostCard({ post }: PostCardProps) {
   return (
     <article className="group hover:bg-slate-100 dark:hover:bg-slate-900 rounded-md p-4 transition-colors">
       <Link href={`/blog/${post.category}/${post.slug}`}>
-        <h2 className="text-2xl font-semibold group-hover:text-primary transition-colors mb-2">
+        <h2 className="text-2xl leading-9 font-semibold group-hover:text-primary transition-colors mb-2">
           {post.title}
         </h2>
         <div className="flex gap-4 text-sm text-muted-foreground mb-4">

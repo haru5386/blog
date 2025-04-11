@@ -319,7 +319,7 @@ export default function MemoryManagementDemo() {
               </CardHeader>
               <CardContent className="h-64 overflow-y-auto border rounded-md p-4 flex flex-col-reverse">
                 {stackObjects.map(obj => (
-                  <div key={obj.id} className="p-2 mb-2 bg-gray-100 rounded flex justify-between items-center">
+                  <div key={obj.id} className="p-2 mb-2 bg-gray-100 dark:bg-gray-700 rounded flex justify-between items-center">
                     <div>
                       <Badge variant="outline">{obj.type}</Badge>
                       <span className="ml-2">{String(obj.value)}</span>
@@ -345,7 +345,7 @@ export default function MemoryManagementDemo() {
               </CardHeader>
               <CardContent className="h-64 overflow-y-auto border rounded-md p-4">
                 {heapObjects.map(obj => (
-                  <div key={obj.id} className="p-2 mb-2 bg-gray-100 rounded">
+                  <div key={obj.id} className="p-2 mb-2 bg-gray-100 dark:bg-gray-700 rounded">
                     <div className="flex justify-between mb-1">
                       <Badge variant="outline">物件 #{obj.id}</Badge>
                       <div>
@@ -392,7 +392,7 @@ export default function MemoryManagementDemo() {
                   <h3 className="text-lg font-medium mb-2">堆物件狀態</h3>
                   <div className="border rounded-md p-4 h-64 overflow-y-auto">
                     {heapObjects.map(obj => (
-                      <div key={obj.id} className="p-2 mb-2 bg-gray-100 rounded">
+                      <div key={obj.id} className="p-2 mb-2 bg-gray-100 dark:bg-gray-700 rounded">
                         <div className="flex justify-between">
                           <Badge variant="outline">物件 #{obj.id}</Badge>
                           <div>
@@ -503,7 +503,7 @@ export default function MemoryManagementDemo() {
                           </Button>
                         </div>
                         <div className="p-2 bg-white rounded">
-                          <p className="text-sm mb-1 font-medium">包含的物件:</p>
+                          <p className="text-sm mb-1 font-medium text-slate-800">包含的物件:</p>
                           <div className="flex flex-wrap gap-1">
                             {group.objects.map(objId => {
                               const obj = heapObjects.find(o => o.id === objId);
@@ -543,13 +543,13 @@ export default function MemoryManagementDemo() {
                 
                 <div>
                   <h3 className="text-lg font-medium mb-2">循環引用示意圖</h3>
-                  <div className="border rounded-md p-4 h-64 bg-white flex items-center justify-center">
+                  <div className="border rounded-md p-4 h-64 bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
                     {circularRefGroups.length > 0 ? (
                       <div className="text-center">
                         <div className="flex justify-center mb-4">
                           {circularRefGroups[0].objects.map((objId, index) => (
                             <div key={objId} className="relative">
-                              <div className="w-16 h-16 mx-2 rounded-full bg-blue-100 border border-blue-300 flex items-center justify-center">
+                              <div className="w-16 h-16 mx-2 rounded-full bg-blue-100 dark:bg-slate-600 border border-blue-300 flex items-center justify-center">
                                 <span className="font-bold">#{objId}</span>
                               </div>
                               {index < circularRefGroups[0].objects.length - 1 && (
@@ -562,7 +562,7 @@ export default function MemoryManagementDemo() {
                           ))}
                         </div>
                         <div className="w-32 h-0.5 bg-red-400 mx-auto"></div>
-                        <div className="mt-4 text-sm text-gray-600">
+                        <div className="mt-4 text-sm text-gray-600 dark:text-gray-300">
                           這些物件互相引用形成一個閉環，<br />
                           導致基於引用計數的垃圾回收無法釋放它們
                         </div>
@@ -676,11 +676,11 @@ export default function MemoryManagementDemo() {
                         <AlertTriangle className="h-4 w-4 mr-1" />
                         閉包未正確釋放
                       </h4>
-                      <p className="text-sm text-gray-600 mt-1">
+                      <p className="text-sm mt-1">
                         當閉包中的函數持有對外部變數的引用，而這些函數被長時間保存（如事件監聽器），
                         可能導致相關的變數無法被垃圾回收。
                       </p>
-                      <div className="bg-gray-100 p-2 rounded mt-1 text-xs">
+                      <div className="bg-gray-100 dark:bg-slate-700 p-2 rounded mt-1 text-xs">
                         <code>
                           function setupHandler() &#123;<br />
                           &nbsp;&nbsp;const largeData = new Array(10000);<br />
@@ -697,7 +697,7 @@ export default function MemoryManagementDemo() {
                         <AlertTriangle className="h-4 w-4 mr-1" />
                         未移除的事件監聽器
                       </h4>
-                      <p className="text-sm text-gray-600 mt-1">
+                      <p className="text-sm mt-1">
                         當元素被移除但其事件監聽器未被清除時，相關的回調函數和上下文可能仍被保留在記憶體中。
                       </p>
                     </div>
@@ -707,7 +707,7 @@ export default function MemoryManagementDemo() {
                         <AlertTriangle className="h-4 w-4 mr-1" />
                         定時器未清除
                       </h4>
-                      <p className="text-sm text-gray-600 mt-1">
+                      <p className="text-sm mt-1">
                         setInterval 或 setTimeout 創建的定時器如果沒有通過 clearInterval 或 clearTimeout 清除，
                         其回調函數及相關上下文可能會一直保留在記憶體中。
                       </p>
@@ -718,7 +718,7 @@ export default function MemoryManagementDemo() {
                         <AlertTriangle className="h-4 w-4 mr-1" />
                         全局變數濫用
                       </h4>
-                      <p className="text-sm text-gray-600 mt-1">
+                      <p className="text-sm mt-1">
                         全局變數在應用程式的整個生命週期內都存在，如果不小心將大量數據存儲為全局變數，
                         可能導致記憶體持續增長。
                       </p>
@@ -729,7 +729,7 @@ export default function MemoryManagementDemo() {
                         <AlertTriangle className="h-4 w-4 mr-1" />
                         DOM 被移除但還被引用
                       </h4>
-                      <p className="text-sm text-gray-600 mt-1">
+                      <p className="text-sm mt-1">
                       在一個 SPA 或動態網頁中建立了一個 DOM 元素，並儲存到變數中，後來你從畫面上移除了這個元素，但是忘了把 JS 裡的引用也清掉。
                       </p>
                     </div>
