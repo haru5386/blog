@@ -16,7 +16,9 @@
 14. 資料夾結構
 15. vue底層寫法
 16. clean code
-17. 處理程序（process）與執行緒（thread）
+17. 處理程序（process）與執行緒（thread）V
+18. 虛擬記憶體
+19. 檔案系統與權限
 
 # project
 1. 加上OG、seo

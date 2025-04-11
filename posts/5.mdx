@@ -1,10 +1,100 @@
 ---
-title: JavaScript 記憶體運作原理與垃圾回收：你真的懂 JS 怎麼釋放記憶體嗎？
+title: 理解 Process、Thread、與 IPC：系統底層對前端有什麼影響？
 date: 2025-04-10
 category: basics
-abstract: JavaScript 真的幫你全自動管理記憶體嗎？了解 stack、heap、垃圾回收機制與記憶體洩漏的常見陷阱，讓你寫出更穩定的程式。
-tags: [memory, garbage-collection, javascript, performance, heap-stack]
+abstract: Process、Thread 到記憶體與 IPC，看似是系統層知識，卻與你每天寫的前端程式密切相關。用簡單易懂的方式，帶你掌握這些核心概念，從此看懂 Chrome 與 Node.js 背後的運作邏輯。
+tags: [process, thread, memory, ipc, operating-system, javascript]
 ---
 
+在學習前端或後端開發的過程中，我們經常會聽到 **process（處理程序）**、**thread（執行緒）**、**記憶體空間** 以及 **IPC（跨行程通訊）** 這些詞彙。這些概念看似屬於底層系統，但實際上，它們就存在於我們平常開啟的 Chrome、執行的 Node.js 程式。下面會用圖解的方式來說明。首先我們些了解這些詞彙：
+
+### Process (處理程序) 是什麼？
+
+**Process** 是指一個正在執行的程式實例，包含程式碼、資料、堆疊空間和系統資源。每個處理程序有獨立的記憶體空間，彼此隔離。
+當你開啟一個應用程式（像是打開 Chrome 或執行 node app.js），作業系統會為你建立一個或多個 Process ，可以獨立執行的程式實體 。為什麼會建立多個 Process，我們稍候再來做說明。目前我們先了解每個 Process 會有什麼。
+
+一個 Process 會擁有：
+
+- 自己的記憶體空間，無法與其他 Process 直接共享 （除非用 IPC，之後會說明 IPC 是什麼）。
+
+- 一組執行緒（Thread）。
+
+- 一堆資源（像是開啟的檔案、環境變數、網路連線等）。
+
+### Thread（執行緒） 是什麼？
+
+Thread 是 Process 中的最小執行單位。每個 Process 啟動時，至少會有一個主執行緒（Main Thread）。Thread 可以讓一個程式同時做多件事，例如處理動畫、執行非同步任務、網路請求等等。並且 Thread 可以同時執行，共享 Process 的程式碼、全域變數、Heap（儲存物件、共用資料）等資源，但 Stack （儲存函式呼叫、區域變數）和暫存器會是獨立的。
+
+---
+
+看到現在大家還是霧煞煞對吧，我們直接用**Chrome 應用程式**來舉例吧！
+
+#### 多處理程序架構
+
+我們首先要了解，現代瀏覽器大量應用 Process 與 Thread 的概念來提升效能、穩定性和安全性。就是說我們開啟 Chrome 瀏覽器的時候，作業系統會幫我們建立一個主 Process 和好幾個子 Process。
+
+最直接的看法，來，首先打開 Mac 的活動監視器，這列表每一個其實都代表一個 Process，我們拉到和 Chrome 相關的。
+
+![5-1](/images/post/5-1.png)
+
+是不是常常看到為什麼光是 Chrome 就佔據超多個？。圖上最下方的 Google Chrome 就是 Chrome 的主 Process。而多到不行的 Google Chrome Helper (Renderer) 就是我們每個分頁的 Process。Chrome 瀏覽器讓「每個分頁一個 Process」，這樣一個分頁崩潰不會影響其他分頁，以提升效能和穩定性，同時又能有效地共享常用資源。
+
+#### 瀏覽器多處理程序架構通常如下：
+
+1. **主處理程序 (Browser Process):** 只有一個，負責管理整個瀏覽器的用戶界面、協調其他處理程序等。
+2. **GPU 處理程序 (GPU Process):** 通常只有一個，處理所有分頁的圖形繪製任務。
+3. **網路處理程序 (Network Process):** 通常只有一個，處理所有的網路請求。
+4. **插件處理程序 (Plugin Process):** 每種插件可能會有自己的處理程序。
+5. **渲染處理程序 (Renderer Process):** 每個分頁通常有自己的渲染處理程序，這也是"每個分頁一個處理程序"概念的核心。
+6. **儲存處理程序 (Storage Process):** 這通常是單一的，負責管理所有分頁的存儲操作，而非每個分頁擁有自己的。
+
+我們直接用下圖來理解瀏覽器的 Process 和 Thread 關係。
+
 <SystemProcess />
-<System />
+
+從上圖我們可以很明顯的看出
+
+- **Process 屬於平行獨立關係**：每個彩色大方框代表一個獨立處理程序，它們相互獨立，有各自的記憶體空間
+- 每個 Process 內部包含多個 Thread(圓角小方框)，這些 **Thread 共享該處理程序的記憶體空間**。
+- **分頁隔離機制**，圖中可以看到，每個分頁有自己獨立的渲染處理程序、與 JS 處理環境。
+- 同時，**分所有分頁共享網路處理程序、GPU 處理程序和儲存處理程序等資源**，以提高效率。
+
+這種多處理程序架構結合多執行緒設計，既保證了瀏覽器的穩定性和安全性，又能充分利用現代多核處理器的優勢，提供流暢的使用體驗。
+
+### 最後我們來聊聊 IPC（Inter-Process Communication, 跨行程通訊）是什麼？
+
+因為 Process 間記憶體不能共享，所以如果兩個 Process 要交換資料，就必須使用 IPC（跨行程通訊）機制，例如：
+
+- postMessage（在瀏覽器 tab 間溝通）
+
+- child_process 的 process.send()（Node.js 子行程）
+
+- WebSocket、MessagePort、SharedWorker（進階溝通）
+
+##### 舉個簡單的例子：
+在 Chrome 裡：
+- 你按了一個 `<a href="/next"> `連結
+- JS 在 Renderer Process 執行，發送一個 IPC 訊息：「我要跳轉到 /next」
+- Browser Process 收到後幫你開一個新的網址或分頁
+
+IPC 幫你了處裡跨 Process 的問題。
+
+---
+
+### Process X Thread X IPC 間的關係
+
+#### 我們可以這樣想像：
+
+✅ 在一個 Process 裡：
+就像是一間房子，裡面有很多工人（Thread），他們可以直接講話、共用同一塊記憶體，很方便、很快。
+
+❌ 但不同 Process：
+是兩棟房子，彼此記憶體獨立，不能直接存取對方的東西。要傳訊息，只能用對外溝通的「信差」或「對講機」來傳遞資料，這就是 IPC。
+
+---
+
+### 結語
+
+理解 Process、Thread、記憶體與 IPC，不只是寫後端或系統程式才需要的技能。這些概念也出現在你每天用的瀏覽器、Node.js 執行環境，甚至前端效能優化與非同步流程設計裡。當你理解背後的運作邏輯，就能更有信心掌握程式的行為！
+轉職三年的我，也是第一次碰觸這些主題啊！
+
