@@ -85,7 +85,7 @@ export function Search({ posts }: SearchProps) {
                 onClick={() => setOpen(false)}
                 className="block p-3 rounded-lg hover:bg-muted transition-colors"
               >
-                <h3 className="font-medium">{post.title}</h3>
+                <h3 className="font-medium text-lg">{post.title}</h3>
                 <p className="mt-1 text-sm text-muted-foreground line-clamp-2">
                   {post.abstract}
                 </p>

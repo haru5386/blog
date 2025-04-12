@@ -549,7 +549,7 @@ export default function MemoryManagementDemo() {
                         <div className="flex justify-center mb-4">
                           {circularRefGroups[0].objects.map((objId, index) => (
                             <div key={objId} className="relative">
-                              <div className="w-16 h-16 mx-2 rounded-full bg-blue-100 dark:bg-slate-600 border border-blue-300 flex items-center justify-center">
+                              <div className="w-16 h-16 mx-2 rounded-full bg-blue-100 dark:bg-slate-800 border border-blue-300 flex items-center justify-center">
                                 <span className="font-bold">#{objId}</span>
                               </div>
                               {index < circularRefGroups[0].objects.length - 1 && (

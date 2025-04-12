@@ -43,7 +43,7 @@ export default async function PostPag(
         <h1>{post.title}</h1>
         <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mt-4 mb-8 border-b border-border pb-6">
           <time dateTime={post.date}>{post.date}</time>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             {post.tags.map((tag) => (
               <span
                 key={tag}

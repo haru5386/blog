@@ -22,6 +22,7 @@ export function MobileMenu({ isOpen, onOpenChange }: MobileMenuProps) {
       <Sheet.Portal>
         <Sheet.Overlay className="fixed inset-0 z-50 bg-black/50" />
         <Sheet.Content className="fixed inset-y-0 right-0 z-50 w-3/4 bg-background p-6 shadow-lg sm:max-w-sm">
+        <Sheet.Title />
           <div className="flex items-center justify-between">
             <Sheet.Close asChild>
               <button className="rounded-sm opacity-70 hover:opacity-100">

@@ -16,11 +16,11 @@ export function PostCard({ post }: PostCardProps) {
           <time dateTime={post.date}>{post.date}</time>
         </div>
         <p className="text-muted-foreground">{post.abstract}</p>
-        <div className="flex gap-2 mt-4">
+        <div className="flex gap-2 mt-4 flex-wrap">
           {post.tags.map((tag) => (
             <span
               key={tag}
-              className="text-xs px-2 py-1 bg-primary/10 text-primary rounded"
+              className="text-xs px-2 py-1 bg-muted text-primary rounded"
             >
               {tag}
             </span>
