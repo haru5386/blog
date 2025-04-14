@@ -89,7 +89,6 @@ export async function CustomMDX(props: CustomMDXProps) {
   return (
     <MDXRemote
       {...props}
-      
       options={{
         mdxOptions: {
           remarkPlugins:[remarkGfm],

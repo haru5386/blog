@@ -62,13 +62,13 @@ export default function Home() {
     const tl = gsap.timeline();
     
     tl.from(".y2k-title", {
-      opacity: 0,
+      opacity: 0.8,
       scale: 0.8,
       duration: 1,
       ease: "elastic.out(1, 0.5)"
     })
     .from(".y2k-subtitle", {
-      opacity: 0,
+      opacity: 0.7,
       y: 20,
       duration: 0.7,
       ease: "power2.out"
