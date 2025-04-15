@@ -1,0 +1,467 @@
+---
+title: two-pointers 雙指針
+date: 2025-04-15
+category: algorithm
+abstract: 了解 Two Pointers 演算法的基本概念和應用場景，包括同向移動的指針和對撞指針的用法。
+tags: [Two Pointers, Leetcode]
+---
+
+### Two Pointers 演算法
+
+Two Pointers（雙指針）是一種常用的演算法技巧，通常用於處理陣列或鏈表。它的核心思想是使用兩個指標來遍歷資料結構，從而在線性時間內解決問題，通常能將時間複雜度從 O(n²) 降至 O(n)。
+Two Pointers 常見用法：
+
+### 1. 同向移動的指針：兩個指針從同一側開始，通常用於尋找子陣列或子序列
+
+- 例如：移除重複元素、找出滿足條件的子陣列
+
+---
+
+Leetcode 26 ( easy ) :[Remove Duplicates from Sorted Array](https://leetcode.com/problems/remove-duplicates-from-sorted-array/)
+
+**題目：給你一個已排序的陣列，請原地移除重複元素，讓每個元素只出現一次，並回傳新的長度。**
+
+❓ 為什麼用 Two Pointers？因為要移除重複元素，所以用指針來遍歷陣列，並用快指針來跳過重複元素，慢指針則保留唯一的元素。
+
+⚙️ 哪些條件讓指針前進？慢指針前進的條件是快指針的值不等於慢指針的值。
+
+```c
+var removeDuplicates = function(nums) {
+  let slow = 0
+  for(let fast = 1;fast < nums.length; fast ++; ) {
+    if(nums[slow] !== nums[fast]) {
+      slow++
+      nums[slow] = nums[fast]
+    }
+  }
+  return slow + 1
+};
+```
+
+---
+
+Leetcode 27 ( easy ) :[Remove Element](https://leetcode.com/problems/remove-element/)
+
+**題目：給你一個整數陣列 nums 和一個整數值 val，你需要原地（in-place）移除所有等於 val 的元素，並回傳移除後陣列的新長度。**
+
+❓ 為什麼用 Two Pointers？因為要移除重複元素，所以用指針來遍歷陣列，並用快指針來跳過重複元素，慢指針則保留唯一的元素。
+
+⚙️ 哪些條件讓指針前進？快指針不等於 val 時，慢指針向前移動並將快指針的值賦值給慢指針
+
+```c
+  var removeElement = function (nums, val) {
+    let slow = 0;
+    for (let fast = 0; fast < nums.length; fast++) {
+      if (nums[fast] !== val) {
+        nums[slow] = nums[fast];
+        slow++;
+      }
+    }
+    return slow;
+  };
+```
+
+---
+
+Leetcode 283 ( easy ) :[Move Zeroes](https://leetcode.com/problems/move-zeroes/)
+
+**題目：給你一個整數陣列 nums，你需要原地（in-place）將所有 0 移動到陣列的末尾。**
+
+❓ 為什麼用 Two Pointers？因為要移動特定元素至陣列末尾，慢指針只要不為 0，都和快指針交換
+
+⚙️ 哪些條件讓指針前進？快指針遇到 0 時，慢指針不會前進
+
+```c
+var moveZeroes = function (nums) {
+  let slow = 0;
+  for (let fast = 0; fast < nums.length; fast++) {
+    if(nums[fast] !== 0) {
+      [nums[slow], nums[fast]] = [nums[fast], nums[slow]]
+      slow ++
+    }
+  }
+};
+```
+
+---
+
+Leetcode 209 ( medium):[Minimum Size Subarray Sum](https://leetcode.com/problems/minimum-size-subarray-sum/)
+
+**題目：給你一個整數陣列 nums 和一個整數目標值 target，請找出最短的子陣列，其元素總和大於或等於 target，並回傳該子陣列的長度。**
+
+❓ 為什麼用 Two Pointers？因為要尋找最短子陣列，所以用指針來遍歷陣列，並用快指針來尋找子陣列，慢指針則保留最短子陣列的起始位置。
+
+⚙️ 哪些條件讓指針前進？快指針的值大於或等於 target 時，計算快指針和慢指針中間陣列的長度，慢指針前進，總和扣除慢指針的值。
+
+```c
+var minSubArrayLen = function(target, nums) {
+ let left = 0
+  let sum = 0
+  let minLen = Infinity
+  for(let fast = 0; fast < nums.length; fast++) {
+    sum += nums[fast]
+      while(sum >= target){
+        minLen = Math.min(minLen, fast-left + 1)
+        sum-= nums[left]
+          left ++
+      }
+  }
+    return minLen === Infinity? 0 : minLen
+};
+```
+
+---
+
+Leetcode 3 ( medium):[Longest Substring Without Repeating Characters](https://leetcode.com/problems/longest-substring-without-repeating-characters/)
+
+**題目：給你一個字串 s，請找出其中不包含重複字元的最長子字串的長度。**
+
+❓ 為什麼用 Two Pointers？因為要尋找不包含重複字元的子字串，所以用指針來遍歷字串，並用快指針來尋找子字串，慢指針則保留子字串的起始位置。為了了解有沒有重複字元，可以用 new Set()來儲存子字串中的字元。
+
+⚙️ 哪些條件讓指針前進？快指針遇到重複字元時，慢指針前進，並跳過所有重複字元，直到快指針遇到不同的字元為止。
+
+```c
+var lengthOfLongestSubstring = function(s) {
+  let fast = 0;
+  let slow = 0;
+  let maxLength = 0;
+  const cartSet = new Set();
+  while (fast < s.length) {
+    if (cartSet.has(s[fast])) {
+      cartSet.delete(s[slow]);
+      slow++;
+    } else {
+      cartSet.add(s[fast]);
+      fast++;
+      maxLength = Math.max(maxLength,  fast - slow);
+    }
+  }
+  return maxLength;
+}
+```
+
+### 2. 對向移動的指針：一個指針從頭，一個從尾，向中間移動
+
+- 例如：判斷回文、排序問題（如快速排序的分區操作）
+
+---
+
+Leetcode 125 ( easy ) :[Valid Palindrome](https://leetcode.com/problems/valid-palindrome/)
+
+**題目：給你一個字串 s，請判斷它是否為回文。**
+
+❓ 為什麼用 Two Pointers？因為要判斷回文，所以用前後指針來遍歷字串，前指針從字串頭開始，後指針從字串尾開始，直到相遇為止。
+
+⚙️ 哪些條件讓指針前進？前指針和後指針的值相等就像中間前進，不等就 return false
+
+```c
+var isPalindrome = function(s) {
+  const filter = s.replace(/[^a-z0-9]/gi, '').toLocaleLowerCase() // 先移除空格符號
+  let left = 0;
+  let right = filter.length - 1;
+  while (left < right) {
+    if (filter[left] !== filter[right]) {
+      return false;
+    }
+    left++;
+    right--;
+  }
+  return true;
+}
+```
+
+---
+
+Leetcode 344 ( easy ) :[Reverse String](https://leetcode.com/problems/reverse-string/)
+
+**題目：給你一個字串 s，你需要原地（in-place）反轉字串中的所有字元。**
+
+❓ 為什麼用 Two Pointers？因為要反轉字串，所以用前後指針來遍歷字串，前指針從字串頭開始，後指針從字串尾開始，直到相遇為止。
+
+```c
+var reverseString = function(s) {
+  let left = 0;
+  let right = s.length - 1;
+  while (left < right) {
+    [s[left], s[right]] = [s[right], s[left]];
+    left++;
+    right--;
+  }
+}
+```
+
+---
+
+Leetcode 167 ( easy ) :[Two Sum II - Input array is sorted](https://leetcode.com/problems/two-sum-ii-input-array-is-sorted/)
+
+**題目：給你一個已排序的整數陣列 nums 和一個目標值 target，請找出所有和為 target 的兩個數字的索引。**
+
+❓ 為什麼用 Two Pointers？因為要尋找兩個數字的索引，所以用雙向指針來遍歷陣列。
+
+⚙️ 哪些條件讓指針前進？從右邊指針開始，如果左右指針和大於 target，則右指針往前移動，反之左指針向右移動，直到和等於 target 。
+
+```c
+var twoSum = function(nums, target) {
+      let left = 0
+    let right = numbers.length -1
+    while(left < right){
+        if(numbers[left]+numbers[right] > target){
+            right--
+        } else if(numbers[left]+numbers[right] < target){
+            left ++
+        } else {
+            return [left+1, right+1]
+        }
+    }
+    return []
+}
+```
+
+---
+
+Leetcode 680 ( medium):[Valid Palindrome II](https://leetcode.com/problems/valid-palindrome-ii/)
+
+**題目：給你一個字串 s，請判斷它就算刪掉一個字，也還是為回文。**
+
+❓ 為什麼用 Two Pointers？因為要判斷回文，所以用前後指針來遍歷字串
+
+⚙️ 哪些條件讓指針前進？如果兩邊字元一樣，就可以繼續往中間中，不一樣的話檢查 s[left+1:right]、s[left:right-1]
+
+```c
+var validPalindrome = function(s) {
+  let left = 0;
+  let right = s.length - 1;
+
+  const handleMove = (left, right) => {
+    while (left < right) {
+      if (s[left] !== s[right]) return false;
+      left++;
+      right--;
+    }
+    return true;
+  };
+  while (left < right) {
+    if (s[left] !== s[right]) return handleMove(left + 1, right) || handleMove(left, right - 1);
+    left++;
+    right--;
+  }
+  return true;
+}
+```
+
+---
+
+Leetcode 11 ( easy ) :[Container With Most Water](https://leetcode.com/problems/container-with-most-water/)
+
+**題目：給你一個整數陣列 height，請找出盛最多水的容器。**
+
+❓ 為什麼用 Two Pointers？因為要尋找盛最多水的容器，所以用雙向指針來遍歷陣列。面積＝(right-left) \* Math.min(height[right], height[left])
+
+⚙️ 哪些條件讓指針前進？指針從兩側開始，如果左指針小於右指針，左指針往右移動，反之右指針往左移動，直到找到盛最多水的容器。這種移動方式可以確保是在當前情況下找到盛最多水的容器，又不需要都從頭開始遍歷。
+
+```c
+var maxArea = function(height) {
+    let area = 0
+    let left = 0
+    let right = height.length - 1
+    while(left < right) {
+        const distance = right -left
+        const minHeight = Math.min(height[left], height[right])
+        area = Math.max(area, distance * minHeight)
+        if(height[left] < height[right]) left ++
+        else right --
+    }
+    return area
+}
+```
+
+### 3. 快慢指針：一個指針移動速度是另一個的兩倍
+
+- 例如：檢測環形鏈表、尋找中間元素
+
+---
+
+Leetcode 141 ( easy ) :[Linked List Cycle](https://leetcode.com/problems/linked-list-cycle/)
+
+**題目：給你一個鏈表的頭節點 head，請判斷鏈表中是否存在環。**
+
+❓ 為什麼用 Two Pointers？因為要檢測環形鏈表，所以用快指針和慢指針來遍歷鏈表，快指針每次移動兩格，慢指針每次移動一格，如果快指針和慢指針相遇，則表示存在環。
+
+⚙️ 哪些條件讓指針前進？快指針每次移動兩格，慢指針每次移動一格，如果快指針和慢指針相遇，則表示存在環。
+
+```c
+var hasCycle = function(head) {
+    if (!head) return false
+    let fast = head
+    let slow = head
+
+    while(fast && fast.next){
+        slow = slow.next
+        fast = fast.next.next
+        if(slow === fast) return true
+    }
+
+    return false
+}
+```
+
+---
+
+Leetcode 876(easy):[Middle of the Linked List](https://leetcode.com/problems/middle-of-the-linked-list/)
+
+**題目：給你一個鏈表的頭節點 head，請尋找鏈表的中間節點。**
+
+❓ 為什麼用 Two Pointers？因為要尋找中間節點，所以用快指針和慢指針來遍歷鏈表，快指針每次移動兩格，慢指針每次移動一格，當快指針到達鏈表尾部時，慢指針正好位於中間節點。
+
+⚙️ 哪些條件讓指針前進？快指針每次移動兩格，慢指針每次移動一格，當快指針到達鏈表尾部時，慢指針正好位於中間節點。
+
+```c
+var middleNode = function(head) {
+  if(!head) return null
+  let slow = head
+  let fast = head
+  while(fast && fast.next) {
+    slow = slow.next
+    fast = fast.next.next
+  }
+  return slow
+}
+```
+
+---
+
+Leetcode 234 ( medium):[Palindrome Linked List](https://leetcode.com/problems/palindrome-linked-list/)
+
+**題目：給你一個鏈表的頭節點 head，請判斷鏈表是否為回文。**
+
+❓ 為什麼用 Two Pointers？因為要判斷回文，所以用快指針和慢指針來遍歷鏈表，快指針每次移動兩格，慢指針每次移動一格，當快指針到達鏈表尾部時，慢指針正好位於中間節點。慢指針繼續走，邊走邊反轉後半部。
+
+⚙️ 哪些條件讓指針前進？快指針每次移動兩格，慢指針每次移動一格，當快指針到達鏈表尾部時，慢指針正好位於中間節點。快指針再迴轉，慢指針再從頭開始比對。
+
+```c
+var isPalindrome = function(head) {
+  if (!head) return true;
+  let slow = head;
+  let fast = head;
+  while (fast && fast.next) {
+    slow = slow.next;
+    fast = fast.next.next;
+  }
+  let prev = null; // 反轉後半部
+  while (slow) {
+    next = slow.next;
+    slow.next = prev;
+    prev = slow;
+    slow = next;
+  }
+  // 比較head prev兩個鏈結
+  let right = prev;
+  let left = head;
+  while (right) {
+    if (left.val !== right.val) return false;
+    right = right.next;
+    left = left.next;
+  }
+  return true;
+}
+```
+
+---
+
+Leetcode 142 ( medium):[Linked List Cycle II](https://leetcode.com/problems/linked-list-cycle-ii/)
+
+**題目：給你一個鏈表的頭節點 head，請判斷鏈表中是否存在環。並回傳環的入口節點**
+
+❓ 為什麼用 Two Pointers？因為要判斷環形鏈表，所以用快指針和慢指針來遍歷鏈表，快指針每次移動兩格，慢指針每次移動一格，如果快指針和慢指針相遇，則表示存在環。接著慢指針繼續走，另外新的指針從頭開始走，直到相遇為止，相遇點就是環的入口節點。
+為什麼呢？這題需要點數學證明：
+
+![9-1](/images/post/9-1.png)
+
+a = head 到環入口的距離  
+b = 環入口到相遇點的距離  
+c = 相遇點到環入口的距離  
+
+慢指針走到相遇點走了 a + b  
+快指針走到相遇點必定走了 n 圈的整個環＋入口到環的距離 a + b + n( b + c )  
+又因為快指針走的距離是慢指針的 2 倍，所以  
+
+```p
+2(a + b) = a + b + n( b + c )
+2a + 2b = a + b + nb + nc
+a + b = nb + nc
+a = nb + nc - b
+a = (n-1)b + nc
+a = (n-1)b + (n-1)c + c
+a = (n-1)(b-c) + c
+```
+
+當快慢指針在環中第一次相遇時，快指針比慢指針多走的距離必然是環長度的整數倍。在大多數情況下，第一次相遇時，快指針比慢指針恰好多走了一圈(n=1)。  
+所以我們可以帶 n=1 進去算
+
+```
+a = (1-1)(b + c) + c = 0 + c = c
+```
+
+得 `a = c`
+
+看到這裡已經頭昏腦脹，版主也是，高中畢業就沒碰過數學，搬出高中數學的能力啊！  
+弄懂原理就可以繼續解下去！
+
+
+```c
+var detectCycle = function(head) {
+  if (!head) return null;
+  let slow = head;
+  let fast = head;
+
+  // 判斷是否存在環
+  while (fast && fast.next) {
+    slow = slow.next;
+    fast = fast.next.next;
+
+    if (slow === fast) {
+      // 相遇後，另一個指針再從 Head 出發
+      let left = head;
+      while (left !== slow) {
+        slow = slow.next;
+        left = left.next;
+      }
+      return left; // 環的入口
+    }
+  }
+  return null;
+}
+```
+---
+
+
+### 最後整理 Two Pointers 適用場景
+
+1. **已排序陣列中的搜尋問題：**
+
+  - 尋找兩數之和為特定值
+  - 尋找三數之和為特定值
+  - 最接近目標值的兩/三數之和
+
+2. **陣列操作問題：**
+
+  - 移除重複元素
+  - 移動特定元素至陣列末尾
+  - 合併兩個已排序陣列
+
+3. **判斷回文結構：**
+
+  - 檢查字串/陣列是否為回文
+  - 檢查刪除一個字符後  是否能形成回文
+
+4. **鏈表操作：**
+
+  - 檢測環形鏈表
+  - 找出環的起始點
+  - 找出鏈表中點
+  - 判斷兩鏈表是否相交
+
+5. **對撞指針問題：**
+
+  - 容器盛水問題
+  - 反轉陣列/字串
