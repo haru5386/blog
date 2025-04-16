@@ -1,0 +1,91 @@
+---
+title: 搞懂 DOM 與 BOM：前端工程師都該認識的基礎模型
+date: 2025-04-16
+category: basics
+abstract: DOM 和 BOM 是前端開發中常見卻容易混淆的兩個概念。本文帶你快速釐清兩者的差異：DOM 是操作網頁內容與結構的標準模型，由 W3C 制定；BOM 則是操作瀏覽器本身的介面，雖非標準卻日常常用。除此之外，我們也會簡單介紹 W3C 是什麼、它負責制定哪些網頁技術標準，以及為什麼遵循標準對開發者與使用者都如此重要。適合初學者與想要打穩基本功的你！
+
+tags: [BOM DOM, 網路基礎]
+---
+
+寫前端或用 Vue, React 框架寫程式的人一定常常聽到 DOM 吧？畢竟 Virtual DOM 是框架的關鍵技術之一。或是初學前端的人也會常常看到 DOM 樹的結構。但 BOM 說實話，真的很少看到有人提到（或是我沒看到），~~一開始看到還以為是零件 BOM 表呢~~，但其實我們常常在使用 BOM 的元件。
+
+### BOM（Browser Object Model）瀏覽器物件模型
+
+BOM 是瀏覽器的物件模型，它提供了一些物件和方法，讓我們可以控制瀏覽器的行為。
+
+不是 W3C 標準。
+
+##### 常見的 BOM 元件：
+
+- `window`：瀏覽器視窗本身，幾乎所有 BOM 和 DOM 的起點。
+
+- `navigator`：取得使用者的瀏覽器資訊（如 user agent）。
+
+- `screen`：螢幕解析度等資訊。
+
+- `location`：取得或更改網址（如 window.location.href）。
+
+- `history`：操作瀏覽器的歷史紀錄（如前進、後退）。
+
+- `alert()`, `confirm()`, `prompt()`：顯示對話框。
+
+```c
+alert("Hello from BOM!");
+console.log(window.location.href);
+```
+
+是不是就算沒聽過 BOM，也是有用過他的元件。
+
+---
+
+### DOM（Document Object Model）文件物件模型
+
+如果把網頁比作一棵樹，DOM 就是讓你能夠訪問和修改這棵"樹"上的每一個"樹枝"和"樹葉"的系統。
+
+DOM 是 JavaScript 操作 HTML 或 XML 文件結構的介面。當網頁被載入，瀏覽器會把整個 HTML 文件轉成 DOM Tree，讓 JavaScript 可以動態修改內容。
+
+是 W3C 標準。
+
+##### 常見的 DOM 操作：
+
+- `document.getElementById()`、`querySelector()`：選取元素。
+
+- `.innerText`、`.innerHTML`：取得或修改內容。
+
+- `.style`：修改樣式。
+
+- `.createElement()`、`.appendChild()`：動態建立元素。
+
+---
+
+### W3C 標準
+
+W3C 全名是 World Wide Web Consortium（萬維網聯盟），由網頁之父 Tim Berners-Lee 創立，是一個負責制定網頁技術標準的國際組織。
+| W3C 負責規定「網頁怎麼寫」、「瀏覽器怎麼解讀」、「標籤怎麼用」，讓網頁在不同瀏覽器和裝置上都能正常顯示。
+
+#### 常見的 W3C 標準有哪些？
+
+|              標準名稱               |                           說明                            |
+| :---------------------------------: | :-------------------------------------------------------: |
+|                HTML                 |     網頁的結構標記語言（例如 `<div>`, `<p>`, `<a>`）      |
+|                 CSS                 |          負責樣式與外觀（例如顏色、排版、動畫）           |
+|                 DOM                 |              操作和讀取 HTML 結構的 API 標準              |
+|                ARIA                 | 無障礙設計的標準（Accessible Rich Internet Applications） |
+|                 SVG                 |               用來描述 2D 向量圖的 XML 語法               |
+| Web Accessibility Guidelines (WCAG) |                     無障礙設計的指引                      |
+
+#### 為什麼 W3C 標準很重要？
+
+**跨瀏覽器兼容：** 讓 Chrome、Firefox、Safari 等都能正確顯示網站。
+
+**未來可維護：** 寫標準的 HTML/CSS，比較不會因為某些瀏覽器更新就壞掉。
+
+**利於 SEO & 無障礙設計：** 例如使用正確的語意標籤，有助於搜尋引擎和輔助工具理解內容。
+
+**開發者交流更順暢：** 大家都按照同一套規則寫程式碼，不會雞同鴨講。
+
+##### 可以從 [Can I use](https://caniuse.com/) 看到哪些瀏覽器有支援哪些不支援喔！
+
+---
+
+今天的篇章比較簡單，今天花了很多時間在看 AI 軟體啊，每天都有新的 AI 程式出來，都快跟不上時代了！
