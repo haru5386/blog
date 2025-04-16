@@ -9,6 +9,7 @@
 7. 網路傳輸：HTTP 協議：HTTP, HTTPS, DNS、CDN、Cache V
 8. TCP/IP V
 9. 演算法：雙指針 V
+10. Bom/ dom
 
 # 代辦
 
@@ -27,7 +28,6 @@
 13. design pattern
 14. 檔案系統與權限
 15. WebSocket、SSE
-16. Bom/ dom
 17. 瀏覽器渲染流程
 
 # project
