@@ -1,0 +1,322 @@
+---
+title: 你所不知道的瀏覽器渲染細節：效能瓶頸與優化實戰技巧
+date: 2025-04-17
+category: basics
+abstract: 為什麼某些 CSS 屬性會讓網頁變慢？動畫該用 transform 還是 left？本篇文章拆解瀏覽器渲染機制，帶你認識 Reflow、Repaint 與 GPU 合成圖層的運作，並透過實際程式碼，教你如何寫出高效能網頁。
+tags: [瀏覽器渲染、效能瓶頸、優化實戰技巧]
+---
+
+瀏覽器是我們上網的窗口，前面有講過輸入網址後一連串的動作，最後瀏覽器收到伺服器回傳的資料，並渲染出來。我們今天要來講瀏覽器如何渲染，有了這個觀念可以讓你更了解如何提升瀏覽器的效能！
+
+### 瀏覽器如同一座工廠
+
+想像瀏覽器是一座處理網頁的工廠，當瀏覽器接收到伺服器回傳的資料時，工廠開始運作：
+
+1. **接單階段**：瀏覽器向伺服器發送請求，就像工廠接收訂單
+2. **原料收集**：接收 HTML、CSS、JavaScript 等檔案，這些就像是製造網頁的原料
+3. **解析藍圖**：解析 HTML 建立 DOM 樹，像是根據藍圖了解要做什麼產品
+4. **美化設計**：解析 CSS 建立 CSSOM，決定網頁看起來的樣子
+5. **組裝過程**：結合 DOM 和 CSSOM 建立渲染樹
+6. **Layout（Reflow）**：計算每個元素的位置與大小（相對與父元素），這一步是整個渲染流程中最耗費資源的部分。
+7. **Paint（Repaint）**：根據 Layout 結果，將元素外觀畫到畫面上（背景、邊框、文字）。
+8. **合成圖層 (Composite)**：最後把所有元素畫在螢幕上
+
+---
+
+我們了解了運作流程，接下來我們再來看看有哪些地方有可能有**效能問題**。
+
+#### 1. 資源下載速度
+
+如同從超市買食材的時間。網路速度慢，就像塞車一樣，會延遲整個過程。
+改善方法：**壓縮檔案（裝更小的袋子）、減少不必要的資源（只買需要的東西）**。
+
+#### 2. 渲染效能
+
+這邊要提兩個非常重要的概念**重排(Reflow)、重繪(Repaint)** 。
+
+##### Reflow：就像是搬家重新安排家具，非常耗費資源。
+    瀏覽器重新計算元素的幾何資訊、位置、尺寸。**會導致「整個或部分」渲染樹重新 Layout**，（既觸發 Reflow 又觸發 Repaint）。
+
+    改變尺寸與位置：`width`, `height`, `top`, `left`, `margin`, `padding`, `display`，都會改變 layout，因此必須重新排列整體或部分 DOM。
+
+    我們來看實際例子：
+        - 改變元素尺寸 - 當你修改div的寬度，瀏覽器需要重新計算整個版面
+
+        ```c
+        myElement.style.width = "300px"; // 觸發重排
+        ```
+
+        - 添加/移除元素 - 就像家裡突然多了一張沙發或少了一張桌子
+        ```c
+        container.appendChild(newElement); // 觸發重排
+        parent.removeChild(oldElement);    // 觸發重排
+        ```
+
+        - 改變位置 - 如移動網頁上的區塊
+        ```c
+        element.style.position = "absolute"; // 觸發重排
+        element.style.top = "50px";          // 再次觸發重排
+        ```
+
+        - 改變字體大小 - 會影響文字佔用空間
+        ```c
+        paragraph.style.fontSize = "20px"; // 觸發重排
+        ```
+
+---
+
+    ##### Repaint：Repaint 就像是換衣服，只會影響外表，不會影響位置或尺寸。
+    瀏覽器重新繪製元素的外觀，不涉及位置或尺寸的改變。
+
+    會觸發 Repaint 的樣式變動：`color`, `background-color`, `box-shadow`, `border-color`, `visibility`，不會影響幾何位置，但需要重新畫出。
+
+    ✅我們可以多用`transform`, `opacity`, `filter`，這些都是 GPU 處理，直接變形圖層，不需 layout 或畫圖。
+
+        接著我們來看些實例：
+
+        - 更改顏色 - 不影響元素位置和大小
+        ```c
+        button.style.backgroundColor = "blue"; // 只觸發重繪
+        ```
+
+        - 更改可見性 - 不改變佔用空間的情況下隱藏元素
+        ```c
+        element.style.visibility = "hidden"; // 只觸發重繪
+        // 對比 display: none 會觸發重排，因為元素不再佔用空間
+        ```
+
+        - 改變背景圖 - 更換元素的「皮」
+        ```c
+        div.style.backgroundImage = "url('new-image.jpg')"; // 只觸發重繪
+        ```
+
+---
+
+        ###### 為什麼 transform、filter 與 opacity 不會觸發 Reflow 嗎？
+        因為它們是交由 GPU 直接進行「圖層合成（Composite）」。
+
+        **Composite 是什麼？**
+        想像你把畫面上的一些元素抽成圖層（像 Photoshop 的圖層），每個「圖層」在一開始都畫好了（paint 過了）， 瀏覽器用 GPU 把它們合成成一張最終畫面（Composite）。這就像拼拼圖一樣，不用每次都重畫，只需要把圖層「位移一下」就行了！
+
+        **那 GPU 又什麼的？**
+        GPU（圖形處理器）擅長處理 位移、縮放、透明度、模糊、旋轉 等圖形操作，比 CPU 更快且能並行大量像素處理，因此 transform/opacity/filter 這類動畫可直接丟給 GPU 處理會更快。
+
+
+
+    ###### 優化實例
+
+    為了避免一直重複 Reflow 及 Repaint ，我們有幾點可以注意的地方：
+
+    1. 批量修改DOM
+
+    ```c
+    // 糟糕的方式：每次修改都觸發重排
+    const box = document.getElementById('box');
+    box.style.width = '100px';      // 觸發重排
+    box.style.height = '100px';     // 又觸發重排
+    box.style.margin = '10px';      // 再次觸發重排
+
+    // 優化方式：使用CSS類一次性修改
+    box.className = 'new-box';      // 只觸發一次重排
+    ```
+
+    2. 使用 transform 代替位置屬性
+
+    ```c
+    // 糟糕方式：直接改變位置
+    element.style.left = '100px';   // 觸發重排
+
+    // 優化方式：使用transform
+    element.style.transform = 'translateX(100px)'; // 通常只需重繪
+    ```
+
+    3. 使用 document fragment
+
+    ```c
+    // 糟糕方式：反覆修改DOM
+    for (let i = 0; i < 1000; i++) {
+    container.appendChild(document.createElement('div'));
+    }
+
+    // 優化方式：離線操作後一次性插入
+    const fragment = document.createDocumentFragment();
+    for (let i = 0; i < 1000; i++) {
+    fragment.appendChild(document.createElement('div'));
+    }
+    container.appendChild(fragment); // 只觸發一次重排
+    ```
+
+    4. 先隱藏，再修改，最後顯示
+
+    ```c
+    // 進行複雜修改前先隱藏元素
+    element.style.display = 'none';        // 觸發一次重排
+    // 進行多次修改...
+    element.style.display = 'block';       // 最後再觸發一次重排
+    ```
+
+##### 3. JavaScript 執行
+
+就像廚房裡的主廚，負責動態操作。如果主廚動作太慢或太複雜，整個上菜過程就會延遲。
+
+這邊舉例幾個減少 JS 計算的實用技巧
+
+###### 1. 使用防抖(Debounce)和節流(Throttle)
+
+- **防抖例子** ：設定 X 秒後執行，X 間如果有重複的動作，則重新計時。
+
+  搜尋框輸入時不立即搜尋，等用戶停止輸入才觸發：
+
+```c
+function debounce(func, wait) {
+  let timeout;
+  return function() {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func.apply(this, arguments), wait);
+  };
+}
+
+const debouncedSearch = debounce(function() {
+  // 執行搜尋邏輯
+  console.log("搜尋:", document.getElementById("search").value);
+}, 500);
+
+// 使用
+document.getElementById("search").addEventListener("input", debouncedSearch);
+```
+
+- **節流例子** ：事件執行後，X 秒內只執行一次。
+
+  限制滾動事件處理頻率：
+
+```c
+function throttle(func, limit) {
+  let inThrottle;
+  return function() {
+    if (!inThrottle) {
+      func.apply(this, arguments);
+      inThrottle = true;
+      setTimeout(() => inThrottle = false, limit);
+    }
+  };
+}
+
+const throttledScroll = throttle(function() {
+  console.log("滾動位置:", window.pageYOffset);
+}, 100);
+
+// 使用
+window.addEventListener("scroll", throttledScroll);
+```
+
+###### 2. 避免在循環中 DOM 操作
+
+```c
+// 糟糕的方式：在循環中頻繁訪問DOM
+for (let i = 0; i < 1000; i++) {
+  document.getElementById("result").innerHTML += `<div>${i}</div>`;
+}
+
+// 優化方式：先在字串中累積，最後一次更新DOM
+let html = "";
+for (let i = 0; i < 1000; i++) {
+  html += `<div>${i}</div>`;
+}
+document.getElementById("result").innerHTML = html;
+```
+
+###### 3. 使用事件委託減少事件處理器
+
+```c
+// 糟糕方式：為每個按鈕添加事件
+document.querySelectorAll(".button").forEach(button => {
+  button.addEventListener("click", function() {
+    console.log("按鈕被點擊");
+  });
+});
+
+// 優化方式：使用事件委託
+document.querySelector(".button-container").addEventListener("click", function(e) {
+  if (e.target.classList.contains("button")) {
+    console.log("按鈕被點擊");
+  }
+});
+```
+
+###### 4. 緩存複雜計算結果
+
+```c
+// 未優化：重複計算
+function calculateExpensive(num) {
+  console.log("進行昂貴計算");
+  return num * num * num;
+}
+
+// 調用多次相同參數
+calculateExpensive(4);
+calculateExpensive(4);
+calculateExpensive(4);
+
+// 優化：使用記憶化(Memoization)
+function memoize(fn) {
+  const cache = {};
+  return function(...args) {
+    const key = JSON.stringify(args);
+    if (cache[key] === undefined) {
+      cache[key] = fn.apply(this, args);
+    }
+    return cache[key];
+  };
+}
+
+const memoizedCalculate = memoize(calculateExpensive);
+memoizedCalculate(4); // 計算並緩存
+memoizedCalculate(4); // 直接從緩存返回，不重複計算
+```
+
+###### 5. 使用 requestAnimationFrame 處理動畫
+
+想像一下，你正在看一部電影。電影是由許多靜態畫面快速播放而成的，每秒大約 24 張畫面，這讓你感覺影像是流暢移動的。電腦螢幕也是類似的原理，但通常每秒會更新 60 次左右（我們稱為 60Hz）。
+
+###### requestAnimationFrame 是什麼?
+
+簡單來說，`requestAnimationFrame`（我們可以簡稱為 rAF）就像是在告訴瀏覽器：「嘿，我有一些畫面要更新，請在你下次重繪螢幕前執行我的代碼。」
+
+你可能會問：「我不能直接用`setTimeout`或`setInterval`嗎？」當然可以，想像你約了朋友吃飯。使用`setTimeout`就像是每 10 分鐘看一次手錶，不管朋友到了沒有。而`requestAnimationFrame`則像是餐廳服務生告訴你：「你朋友一到，我馬上通知你。」
+
+rAF適合：做滑動動畫、做淡入淡出效果、做跟隨滑鼠的效果、做遊戲動畫、做圖表動畫等等情況，任何需要平滑視覺更新的情況都適合用rAF。
+
+**與螢幕刷新率同步**
+你的螢幕大概每 16.7 毫秒更新一次（60Hz）。使用 rAF 就像是搭上了這班「更新專車」，確保你的動畫能在正確的時間點執行，不早也不晚。
+
+```c
+// 糟糕方式：使用 setTimeout 進行動畫
+let left = 0;
+function moveBox() {
+  left += 2;
+  document.getElementById("box").style.left = left + "px";
+  if (left < 400) {
+    setTimeout(moveBox, 16); // 約60fps
+  }
+}
+
+// 優化方式：使用 requestAnimationFrame
+function moveBoxSmooth() {
+  left += 2;
+  document.getElementById("box").style.left = left + "px";
+  if (left < 400) { // 如果還沒到終點，繼續移動
+    requestAnimationFrame(moveBoxSmooth); // 瀏覽器自動優化動畫幀率
+  }
+}
+requestAnimationFrame(moveBoxSmooth);
+```
+
+**使用注意**
+
+- 不要在 rAF 中做複雜計算，就像你不會在過馬路時停下來算數學題
+- 使用 CSS 屬性 `transform` 和 `opacity` 做動畫最流暢
+- 記得設定停止條件，不然動畫會一直跑下去
+
+---
+
+這些優化不僅能讓你的網站速度更快，還能明顯改善用戶體驗、減少設備耗電量，特別是在手機等效能較有限的裝置上更為明顯。

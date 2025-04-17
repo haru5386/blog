@@ -9,7 +9,8 @@
 7. 網路傳輸：HTTP 協議：HTTP, HTTPS, DNS、CDN、Cache V
 8. TCP/IP V
 9. 演算法：雙指針 V
-10. Bom/ dom
+10. Bom/ dom V
+11. 瀏覽器渲染流程 V
 
 # 代辦
 
@@ -28,7 +29,6 @@
 13. design pattern
 14. 檔案系統與權限
 15. WebSocket、SSE
-17. 瀏覽器渲染流程
 
 # project
 
@@ -52,12 +52,6 @@
 
 👉 每天都在跟這些打交道！理解 request lifecycle、瀏覽器如何載入頁面，對 debug、效能優化有極大幫助。
 
-6. 瀏覽器原理
-   DOM 與 BOM
-
-Event Loop、Call Stack、Task Queue、Microtask
-
-瀏覽器渲染流程（Reflow vs Repaint）
 
 JS 執行環境（單執行緒 + 非同步）
 
@@ -71,6 +65,51 @@ Babel 的轉譯流程
 原始碼 → Bytecode → 機器碼
 
 👉 想了解 JS 為何有 hoisting、closure、var/let 差異，會非常有幫助。
+
+ 模組三：Vue/Nuxt 底層與進階技巧
+✅ 筆記重點：
+Vue 3 Composition API 原理與應用（reacive, ref, computed, watch, effect scope）
+
+Virtual DOM 與渲染流程（Patch、Diff）
+
+Nuxt3 架構：middleware, plugin, layout, app config, runtime config
+
+SSR vs CSR vs Hybrid rendering
+
+ 模組四：架構設計與模組化實踐
+✅ 筆記重點：
+Component Pattern：slot-based / renderless / HOC / mixin vs composables
+
+應用架構拆分（Domain-based folder 結構、monorepo）
+
+Pinia/Vuex 結構設計（狀態單一出口、邏輯解耦、模組化）
+
+API 管理層封裝（service layer、error handling pattern）
+
+🔍 推薦資源：
+VueUse 開源庫（觀察怎麼做 composable abstraction）
+
+你可複習自己的專案，畫出 folder structure 再回頭優化設計
+
+組五：效能優化與可維護性
+✅ 筆記重點：
+Core Web Vitals 指標與 Lighthouse 分析
+
+Lazy loading、code splitting、preload/prefetch 差異與應用
+
+談重構：KISS / DRY / YAGNI、技術債整理方式
+
+如何 Code Review（可讀性、效能、擴充性）
+
+🔍 推薦資源：
+Google DevTools 教學 & Web.dev 效能最佳實踐
+
+Kent C. Dodds 的 testing & refactoring 系列文章
+
+清晰架構範例：Nuxt3 + module 化的開源專案
+
+
+
 
 # 演算法
 

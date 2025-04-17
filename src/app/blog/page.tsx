@@ -17,7 +17,7 @@ export default async function Blog({ searchParams }: { searchParams: Promise<{ p
 
   return (
     <main className="flex-1 max-w-4xl">
-    <h1 className="text-3xl font-bold mb-8">Latest Posts</h1>
+    <h1 className="text-3xl font-bold mb-8">最新文章</h1>
 
     <div className="grid gap-8">
       {paginatedPosts.map((post) => (
