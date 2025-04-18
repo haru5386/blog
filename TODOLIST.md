@@ -11,6 +11,7 @@
 9. 演算法：雙指針 V
 10. Bom/ dom V
 11. 瀏覽器渲染流程 V
+12. design pattern
 
 # 代辦
 
@@ -26,9 +27,8 @@
 10. vue 底層寫法
 11. clean code
 12. react rerender 機制
-13. design pattern
-14. 檔案系統與權限
-15. WebSocket、SSE
+13. 檔案系統與權限
+14. WebSocket、SSE
 
 # project
 
@@ -52,7 +52,6 @@
 
 👉 每天都在跟這些打交道！理解 request lifecycle、瀏覽器如何載入頁面，對 debug、效能優化有極大幫助。
 
-
 JS 執行環境（單執行緒 + 非同步）
 
 👉 深入理解瀏覽器機制，能寫出更順、更快的互動體驗。
@@ -66,7 +65,7 @@ Babel 的轉譯流程
 
 👉 想了解 JS 為何有 hoisting、closure、var/let 差異，會非常有幫助。
 
- 模組三：Vue/Nuxt 底層與進階技巧
+模組三：Vue/Nuxt 底層與進階技巧
 ✅ 筆記重點：
 Vue 3 Composition API 原理與應用（reacive, ref, computed, watch, effect scope）
 
@@ -76,7 +75,7 @@ Nuxt3 架構：middleware, plugin, layout, app config, runtime config
 
 SSR vs CSR vs Hybrid rendering
 
- 模組四：架構設計與模組化實踐
+模組四：架構設計與模組化實踐
 ✅ 筆記重點：
 Component Pattern：slot-based / renderless / HOC / mixin vs composables
 
@@ -108,24 +107,18 @@ Kent C. Dodds 的 testing & refactoring 系列文章
 
 清晰架構範例：Nuxt3 + module 化的開源專案
 
-
-
-
 # 演算法
 
 1. 排序與搜尋（Sorting & Searching）
    Quick Sort、Merge Sort、Heap Sort 、Binary Search、Kth Largest / Smallest、搜尋旋轉排序陣列
 
-
 🧱 2. 遞迴與分治（Recursion & Divide and Conquer）
 爬樓梯（Climbing Stairs）、Merge Intervals（合併區間）、快速冪（Power(x, n)）、快速排序 / 合併排序
-
 
 📦 3. 動態規劃（Dynamic Programming, DP）
 一維 DP：爬樓梯、最大子陣列和（Kadane’s Algorithm）
 
 二維 DP：編輯距離（Edit Distance）、0/1 背包問題、最長公共子序列（LCS）、最大正方形、最大矩形、記憶化搜尋（Top-down DP）
-
 
 🔁 4. 滑動視窗（Sliding Window）
 最長不重複子字串、最小覆蓋子字串（Minimum Window Substring）、最大滑動視窗（Sliding Window Maximum）、含有最多 K 種字元的最長子字串
@@ -138,7 +131,6 @@ Kent C. Dodds 的 testing & refactoring 系列文章
 
 🧭 8. 圖論（Graph）
 BFS / DFS 遍歷、拓撲排序（Topological Sort）、最短路徑（Dijkstra、Floyd-Warshall）、最小生成樹（Kruskal、Prim）、找環（Cycle Detection）
-
 
 📚 9. 字串處理（String）
 KMP / Rabin-Karp 演算法（字串搜尋）、反轉單字順序、句子順序、子字串處理、字元統計（通常搭配 HashMap）

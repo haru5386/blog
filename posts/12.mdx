@@ -1,0 +1,187 @@
+---
+title: 你所不知道的瀏覽器渲染細節：效能瓶頸與優化實戰技巧
+date: 2025-04-17
+category: basics
+abstract: 為什麼某些 CSS 屬性會讓網頁變慢？動畫該用 transform 還是 left？本篇文章拆解瀏覽器渲染機制，帶你認識 Reflow、Repaint 與 GPU 合成圖層的運作，並透過實際程式碼，教你如何寫出高效能網頁。
+tags: [瀏覽器渲染、效能瓶頸、優化實戰技巧]
+---
+
+
+### 為什麼需要 Design Pattern？
+Design Pattern（設計模式） 是在軟體開發中，前人總結出來的一套「解決常見程式設計問題的最佳實踐」。它們就像程式世界裡的「建築藍圖」，幫助我們用一致、可讀、易維護的方式來寫程式。
+
+當你的程式碼越寫越大、越多人一起合作，你是不是也有遇過以下問題：**重複的邏輯、不好維護的程式碼、擴充困難、容易出 bug、不同開發者風格混亂**。
+
+其中風格應該是最好統一的，現在 Eslint 可以幫我們統一風格，但其他問題，就算再怎麼溝通，也不太可能大家寫出一致的程式碼。所以設計模式提供了解決這些問題的「共通語言」與「結構範本」。
+
+### 設計模式的基本分類 
+
+1. 創建型模式（Creational Patterns） - 處理對象創建機制
+2. 結構型模式（Structural Patterns） - 關注類和對象的組合
+3. 行為型模式（Behavioral Patterns） - 處理對象之間的通信
+
+我們總共會分好幾個章節來講解設計模式，及前端應用的範例，Vue、React、JS 會一起交叉看。
+
+---
+
+### 創建型（Creational Patterns）
+
+
+創建型設計模式的目的是：
+
+> **封裝物件的創建邏輯，讓系統與具體類別解耦，提升彈性與可維護性**。
+
+它們關心的不是「物件怎麼被使用」，而是「物件怎麼被建立」。
+
+#### 1. 單例模式（Singleton Pattern）
+
+想像一下，你開了一家咖啡店，但你只想要有一個收銀機。不管有多少員工，大家都必須共用這一台收銀機。單例模式就是確保整個系統中只有一個特定物件的實例存在。
+最常見的像是：全域狀態管理（Vuex、Redux store）
+
+```c
+// 一個簡單的收銀機單例
+const CashRegister = (function() {
+  let instance; // 私有變數
+  
+  function createInstance() {
+    // 創建物件
+    return {
+      total: 0,
+      addSale(amount) {
+        this.total += amount;
+        console.log(`新增銷售: $${amount}. 總額: $${this.total}`);
+      },
+      getTotal() {
+        return this.total;
+      }
+    };
+  }
+  
+  return {
+    // 這是唯一的公開方法
+    getInstance: function() {
+      if (!instance) {
+        instance = createInstance();
+      }
+      return instance;
+    }
+  };
+})();
+
+// 使用單例
+const register1 = CashRegister.getInstance();
+const register2 = CashRegister.getInstance();
+
+register1.addSale(10);  // 新增銷售: $10. 總額: $10
+register2.addSale(20);  // 新增銷售: $20. 總額: $30
+
+// register1 和 register2 是同一個實例
+console.log(register1 === register2);  // true
+```
+
+**這個例子我們使用閉包和私有變數。**
+
+當 JavaScript 引擎執行到 `const CashRegister = (function() { ... })()` 時，它會：
+
+1. 定義這個匿名函數
+2. 立即執行這個函數
+3. 將這個函數的返回值賦給 CashRegister 常量
+
+立即執行函數內部定義了：
+
+1. 一個私有變數 instance（初始值為 undefined）
+2. 一個私有函數 createInstance()
+3. 返回一個包含 getInstance() 方法的對象
+
+
+當立即執行函數執行完畢後，`CashRegister` 的值就是那個包含 `getInstance()` 方法的對象，而 `instance` 變數會保留在閉包中。
+
+單例的實現機制
+關鍵點在於：即使立即執行函數已經執行完畢，但由於閉包的特性，getInstance() 方法依然可以訪問到 instance 變數！
+當我們執行：
+
+```c
+const register1 = CashRegister.getInstance();
+```
+
+getInstance() 方法會檢查 instance 是否已有值：
+
+如果 instance 是 undefined（第一次調用時），它會通過 createInstance() 創建一個新的收銀機對象，並將其賦值給 instance
+如果 instance 已經有值（後續調用時），它直接返回已有的 instance
+
+所以當我們執行：
+
+```c
+const register2 = CashRegister.getInstance();
+```
+
+想像一下立即執行函數(IIFE)像是一個工廠建設過程：
+
+1. 工廠建好了（立即執行函數執行完成）
+2. 工廠只生產了一個產品模具（`instance` 變數存在於閉包中）
+3. 工廠只開放了一個訂購電話（`getInstance()` 方法）
+4. 每次有客戶打電話來（調用 `getInstance()`），工廠先檢查倉庫裡是否已經有產品：
+
+如果倉庫是空的，就用模具做一個產品放進倉庫，然後發給客戶
+如果倉庫已有產品，就直接把那個產品發給客戶。
+
+這樣一想是不是很好懂。
+
+當然也可以別的寫法
+
+**使用對象字面量實現單例**
+```c
+// 對象字面量實現的收銀機單例
+const CashRegister = {
+  total: 0,
+  addSale(amount) {
+    this.total += amount;
+    console.log(`新增銷售: $${amount}. 總額: $${this.total}`);
+  },
+  getTotal() {
+    return this.total;
+  }
+};
+
+// 使用單例
+CashRegister.addSale(10);  // 新增銷售: $10. 總額: $10
+CashRegister.addSale(20);  // 新增銷售: $20. 總額: $30
+```
+
+這樣寫更簡單明瞭了！只是會立即實體化，不能延遲創建。
+
+當然也可以用 ES6 的 `class` 來實現單例模式，但要注意導入時必須使用函數而不是直接導入對象：
+```c
+// cashRegister.js
+let instance = null;
+
+class CashRegister {
+  constructor() {
+    this.total = 0;
+  }
+  
+  addSale(amount) {
+    this.total += amount;
+    console.log(`新增銷售: $${amount}. 總額: $${this.total}`);
+  }
+  
+  getTotal() {
+    return this.total;
+  }
+}
+
+export default function getCashRegister() {
+  if (!instance) {
+    instance = new CashRegister();
+  }
+  return instance;
+}
+
+// 在其他文件中使用
+// import getCashRegister from './cashRegister.js';
+// 
+// const register1 = getCashRegister();
+// const register2 = getCashRegister();
+// register1.addSale(10);
+// register2.addSale(20);
+```
