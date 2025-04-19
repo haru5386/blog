@@ -6,7 +6,8 @@ import React from 'react'
 import { VFileCompatible } from 'vfile';
 import { getMDXPostComponents } from '@/lib/blog-utils'
 import remarkGfm from 'remark-gfm'
-
+	
+import rehypeSlug from 'rehype-slug';
 interface CustomLinkProps extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
   href: string;
   children: React.ReactNode;
@@ -38,12 +39,12 @@ interface CustomMDXProps {
 }
 
 export const mdxComponents: MDXComponents = {
-  h1: (props) => <h1 className="text-[2rem] leading-tight font-black my-6" {...props} />,
-  h2: (props) => <h2 className="text-[1.75rem] leading-16 font-bold my-6" {...props} />,
-  h3: (props) => <h3 className="text-[1.5rem] leading-tight font-bold my-5" {...props} />,
-  h4: (props) => <h4 className="text-[1.25rem] leading-10 font-bold my-4" {...props} />,
-  h5: (props) => <h5 className="text-[1.125rem] leading-10 font-bold my-4" {...props} />,
-  h6: (props) => <h6 className="text-[1.125rem] leading-tight font-bold my-3" {...props} />,
+  h1: (props) => <h1 className="text-[2rem] leading-tight font-black my-6 scroll-mt-20" {...props} />,
+  h2: (props) => <h2 className="text-[1.75rem] leading-16 font-bold my-6 scroll-mt-20" {...props} />,
+  h3: (props) => <h3 className="text-[1.5rem] leading-tight font-bold my-5 scroll-mt-20" {...props} />,
+  h4: (props) => <h4 className="text-[1.25rem] leading-10 font-bold my-4 scroll-mt-20" {...props} />,
+  h5: (props) => <h5 className="text-[1.125rem] leading-10 font-bold my-4 scroll-mt-20" {...props} />,
+  h6: (props) => <h6 className="text-[1.125rem] leading-tight font-bold my-3 scroll-mt-20" {...props} />,
 
   p: (props) => <p className="text-[1rem] leading-normal font-normal my-4" {...props} />,
   blockquote: (props) => (
@@ -97,6 +98,7 @@ export async function CustomMDX(props: CustomMDXProps) {
               theme: 'github-light',
               keepBackground: false,
             }],
+            rehypeSlug
           ],
         },
       }}
