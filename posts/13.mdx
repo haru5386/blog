@@ -1,0 +1,532 @@
+---
+title: 前端也該懂的設計模式：7 種結構型設計模式
+date: 2025-04-20
+category: basics
+abstract: 這篇文章帶你用「生活比喻」搞懂 7 種常見的結構型設計模式，包括適配器、裝飾器、外觀、組合、代理、橋接與享元。用實際例子和日常類比，讓你輕鬆記住每個模式的用途與特點，提升你的程式架構設計力！
+tags: [Design Pattern、程式架構、程式碼維護、前端知識]
+---
+
+- [1. 適配器模式 (Adapter)](#1-適配器模式-adapter)
+- [2. 裝飾器模式 (Decorator)](#2-裝飾器模式-decorator)
+- [3. 外觀模式 (Facade)](#3-外觀模式-facade)
+- [4. 組合模式 (Composite)](#4-組合模式-composite)
+- [5. 代理模式 (Proxy)](#5-代理模式-proxy)
+- [6. 橋接模式 (Bridge)](#6-橋接模式-bridge)
+- [7. 享元模式 (Flyweight)](#7-享元模式-flyweight)
+
+---
+
+### 結構型模式（Structural Patterns）
+
+> 結構型模式關注的是「類與物件之間的組合關係」，讓它們形成更大的結構，同時保持這些結構靈活且高效。
+
+想像一下，你在搭積木，結構型模式就是教你怎麼把不同的積木組合在一起，讓整個建築更穩固、更實用。
+
+---
+
+### 1. 適配器模式 (Adapter)
+
+簡單來說，就是一個「轉接頭」！把「舊系統」包裝成「新系統能理解的形式」來使用，讓不相容的東西能「接得上」。
+
+我們直接用實際舉例來說明：你公司有舊印表機（OldPrinter），現在買了新印表機（NewPrinter）。
+
+```c
+// 舊印表機，只支援 printText
+class OldPrinter {
+  printText(text) {
+    console.log(`🖨️ Old printer prints: ${text}`);
+  }
+}
+
+// 新印表機，支援 print
+class NewPrinter {
+  print(text) {
+    console.log(`🖨️ New printer prints: ${text}`);
+  }
+}
+```
+
+現在你寫了一個共用函式 printSomething()，希望它不管是舊印表機還是新印表機都能用：
+
+```c
+function printSomething(printer) {
+  printer.print("報表內容");
+}
+```
+
+❌ 直接使用接到舊的印表機會爆炸：
+
+```c
+const oldPrinter = new OldPrinter();
+printSomething(oldPrinter); // ❌ TypeError: printer.print is not a function
+```
+
+**解法**：用 Adapter 讓舊印表機「假裝有 print() 方法」
+
+```c
+class OldPrinterAdapter {
+  constructor(oldPrinter) {
+    this.oldPrinter = oldPrinter;
+  }
+
+  print(text) {
+    // 把新格式的 print() 呼叫，轉成舊的 printText()
+    this.oldPrinter.printText(text);
+  }
+}
+```
+
+現在可以統一處理！
+
+```c
+const oldPrinter = new OldPrinter();
+const newPrinter = new NewPrinter();
+
+const adaptedOld = new OldPrinterAdapter(oldPrinter);
+
+printSomething(adaptedOld); // 🖨️ Old printer prints: Hello Adapter!
+printSomething(newPrinter); // 🖨️ New printer prints: Hello Adapter!
+```
+
+##### 總結一下 Adapter Pattern 的使用關鍵
+
+1. 「不同格式」→「轉成相同介面」
+
+2. 讓你的主程式碼 不需要做多餘判斷
+
+3. 新舊共存 / 第三方整合 / 接框架 都會用到！
+
+---
+
+### 2. 裝飾器模式 (Decorator)
+
+在不改變原本物件的情況下，動態添加功能。想像一下，你買了一個漢堡，但你可以選擇加起司、加蛋、加辣... 每個「配料」就像是一層「裝飾」，它不改變原本漢堡，但額外增加功能（口味）。
+
+我們舉個日常開發可能會用到的例子：裝飾一個 Logger，讓它支援「時間戳記」和「加密」。
+
+**原始 Logger（最基本功能）**
+
+```c
+class Logger {
+  log(message) {
+    console.log(message);
+  }
+}
+```
+
+**加一層裝飾器：加上時間戳記**
+
+```c
+class TimestampLogger {
+  constructor(logger) {
+    this.logger = logger;
+  }
+
+  log(message) {
+    const timestamp = new Date().toISOString();
+    this.logger.log(`[${timestamp}] ${message}`);
+  }
+}
+```
+
+**再加一層裝飾器：加上「加密」功能**
+
+```c
+class EncryptedLogger {
+  constructor(logger) {
+    this.logger = logger;
+  }
+
+  log(message) {
+    const encrypted = Buffer.from(message).toString('base64'); // 模擬加密
+    this.logger.log(`Encrypted: ${encrypted}`);
+  }
+}
+```
+
+**組合起來使用**
+
+```c
+const basicLogger = new Logger();
+const timestampLogger = new TimestampLogger(basicLogger);
+const encryptedLogger = new EncryptedLogger(timestampLogger);
+
+encryptedLogger.log("Hello World!");
+
+// [2025-04-20T09:35:00.000Z] Encrypted: SGVsbG8gV29ybGQh
+```
+
+##### 總結一下 Decorator Pattern 的使用關鍵
+
+1. 原物件保持乾淨，不動它
+2. 想動態擴充功能，加什麼就包一層裝飾器
+3. 可堆疊，支援多層裝飾，就像穿衣服一樣一層一層加上去。
+
+---
+
+### 3. 外觀模式 (Facade)
+
+這個就像是一個「前台接待」，飯店櫃台整合住房、叫車、叫餐，用來包裝複雜的子系統。
+
+假設你要做一個影片轉檔器，要處理這些：
+解碼器選擇（.mp4, .avi）、音訊處理、視訊合成、壓縮、存檔、這些每一項都很複雜，所以我們用 Facade 來封裝。
+
+**各個子系統（模擬）**
+
+```c
+class VideoDecoder {
+  decode(file) {
+    console.log("Decoding video:", file);
+  }
+}
+
+class AudioProcessor {
+  process(file) {
+    console.log("Processing audio:", file);
+  }
+}
+
+class VideoCompressor {
+  compress(file) {
+    console.log("Compressing video:", file);
+  }
+}
+
+class FileSaver {
+  save(file, format) {
+    console.log(`Saving ${file} as ${format}`);
+  }
+}
+```
+
+**Facade（簡化外部接口）**
+
+```c
+class VideoConverterFacade {
+  constructor() {
+    this.decoder = new VideoDecoder();
+    this.audio = new AudioProcessor();
+    this.compressor = new VideoCompressor();
+    this.saver = new FileSaver();
+  }
+
+  convert(file, format) {
+    this.decoder.decode(file);
+    this.audio.process(file);
+    this.compressor.compress(file);
+    this.saver.save(file, format);
+    console.log("✅ Conversion completed!");
+  }
+}
+```
+
+**使用方式：**
+
+```c
+const converter = new VideoConverterFacade();
+
+converter.convert("my-video.avi", "mp4");
+```
+
+使用者不用知道發生了哪些事情，只要知道 converter 可以幫他轉檔完成！
+
+##### 總結一下 Facade Pattern 的使用關鍵
+
+1. 有很多子系統，Facade 把它們包成一個簡單介面。
+2. 想隔離複雜邏輯，使用者只用乾淨入口，不需要懂底層。
+3. 想建立統一 API 接口，前端 SDK、工具包都很常用這招
+
+---
+
+### 4. 組合模式 (Composite)
+
+當你想讓「單一物件」和「一群物件」的使用方式一樣時，就用組合模式。這個模式讓你可以把物件組合成樹結構，然後像處理單個對象一樣處理它們。就像是處理文件和文件夾的關係。
+
+```c
+// 基本組件接口
+class Component {
+  constructor(name) {
+    this.name = name;
+  }
+
+  add(component) { }
+  remove(component) { }
+  getChild(index) { }
+  operation() { }
+}
+
+// 葉子節點
+class Leaf extends Component {
+  operation() {
+    return `葉子 ${this.name} 的操作`;
+  }
+}
+
+// 組合節點
+class Composite extends Component {
+  constructor(name) {
+    super(name);
+    this.children = [];
+  }
+
+  add(component) {
+    this.children.push(component);
+  }
+
+  remove(component) {
+    const index = this.children.indexOf(component);
+    if (index !== -1) {
+      this.children.splice(index, 1);
+    }
+  }
+
+  getChild(index) {
+    return this.children[index];
+  }
+
+  operation() {
+    let results = [];
+    results.push(`組合 ${this.name} 的操作`);
+
+    for (const child of this.children) {
+      results.push(child.operation());
+    }
+
+    return results.join('\n');
+  }
+}
+
+// 使用
+const root = new Composite("根節點");
+root.add(new Leaf("葉子A"));
+root.add(new Leaf("葉子B"));
+
+const branch = new Composite("分支");
+branch.add(new Leaf("葉子C"));
+branch.add(new Leaf("葉子D"));
+
+root.add(branch);
+
+console.log(root.operation());
+// 輸出:
+// 組合 根節點 的操作
+// 葉子 葉子A 的操作
+// 葉子 葉子B 的操作
+// 組合 分支 的操作
+// 葉子 葉子C 的操作
+// 葉子 葉子D 的操作
+```
+
+##### 總結一下 Composite Pattern 的使用關鍵
+
+1. 需要表示「樹狀結構」，例如：檔案系統、UI 樹、公司組織結構。
+2. 想讓使用者不用分辨「單一 or 群組」，使用者只要呼叫 render() 或 execute()。
+3. 會遞迴處理每個節點，讓程式碼統一好管理、可擴充。
+
+---
+
+### 5. 代理模式 (Proxy)
+
+代理模式就像是找了一個「代理人」，它控制對原始對象的訪問。可以用來做緩存、權限控制等。
+
+你可以把 Proxy 想成：你 → 代理人（Proxy） → 真正的目標物件
+
+我們舉個影片串流的例子：
+
+假設你有個類別 `Video`，每次開啟都會載入超大影片。
+
+```c
+class Video {
+  constructor(filename) {
+    this.filename = filename;
+    this.loadFromDisk(); // 很花時間
+  }
+
+  loadFromDisk() {
+    console.log(`Loading video: ${this.filename}`);
+  }
+
+  play() {
+    console.log(`Playing video: ${this.filename}`);
+  }
+}
+```
+
+**我們加一層 Proxy：只有在真的需要時才載入**
+
+```c
+class VideoProxy {
+  constructor(filename) {
+    this.filename = filename;
+    this.realVideo = null;
+  }
+
+  play() {
+    if (!this.realVideo) {
+      this.realVideo = new Video(this.filename);
+    }
+    this.realVideo.play();
+  }
+}
+```
+
+**使用時**
+
+```c
+const video = new VideoProxy("movie.mp4");
+
+// 還沒載入
+console.log("我先去泡咖啡～");
+
+// 真正要播放時才會載入
+video.play();
+
+// output:
+
+// 我先去泡咖啡～
+// Loading video: movie.mp4
+// Playing video: movie.mp4
+```
+
+##### 總結一下 Proxy Pattern 的使用關鍵
+
+1. 加一層包裝，控制 / 擴充原本物件的使用方式
+2. 保持原本物件設計不變，透過代理包裝邏輯，不動原本 code
+3. 實現例如：權限控管、懶載入、紀錄、限制存取…
+
+---
+
+### 6. 橋接模式 (Bridge)
+
+橋接模式把 **「抽象」與「實作」分離，讓它們可以獨立變化。** 也就是說：你不要把「功能的種類」（抽象）和「功能的執行方式」（實作）寫死在一起，要把它們拆開，各自可以自由擴充、組合。
+
+```c
+// 抽象部分
+class RemoteControl {
+  constructor(device) {
+    this.device = device;
+  }
+  togglePower() {
+    this.device.turnOnOrOff();
+  }
+}
+
+// 實作部分
+class TV {
+  turnOnOrOff() {
+    console.log("TV toggled");
+  }
+}
+class Radio {
+  turnOnOrOff() {
+    console.log("Radio toggled");
+  }
+}
+
+// 使用
+const tv = new TV();
+const remote = new RemoteControl(tv);
+remote.togglePower(); // TV toggled
+```
+
+你可能有疑問，這和適配器模式有什麼不一樣？
+
+> 橋接模式是「一開始就設計好彼此要能分開擴充」，
+> 適配器模式是「後來才發現這東西不合，要包一層讓它看起來能用」。
+
+##### 總結一下 Proxy Pattern 的使用關鍵
+
+1. 類別會因為多維度需求（例如裝置類型 × 控制方式）而爆增時
+2. 你想讓「抽象邏輯」和「具體執行」可以各自獨立擴充
+3. 想解耦 UI 和後端實作、或平台與功能的連動方式
+
+---
+
+### 7. 享元模式 (Flyweight)
+
+大量小物件共用資料以節省記憶體。就像是一個遊戲中，不同的角色可以共享相同的材質。
+
+舉例來說：
+想像你在製作一個線上地圖遊戲，有 100,000 棵樹 。每棵樹都有「種類、圖片、顏色、樣式」這些不會變的特徵，也有「位置」這種每棵樹不同的屬性。
+
+如果每棵樹都自己儲存一份圖片資料…那記憶體會爆炸。所以我們可以這樣做：
+
+**共用部分（享元）：**樹的圖片、種類、樣式（由 Flyweight 管理）
+
+**個別資料：**每棵樹的位置、大小等（由外部提供）
+
+```c
+// 共用的資料類別
+class TreeType {
+  constructor(name, color, texture) {
+    this.name = name;
+    this.color = color;
+    this.texture = texture;
+  }
+
+  draw(x, y) {
+    console.log(`在 (${x}, ${y}) 畫出 ${this.name} 樹 🌳，顏色是 ${this.color}`);
+  }
+}
+
+// Flyweight 工廠，負責共用
+class TreeFactory {
+  constructor() {
+    this.treeTypes = {};
+  }
+
+  getTreeType(name, color, texture) {
+    const key = `${name}_${color}_${texture}`;
+    if (!this.treeTypes[key]) {
+      this.treeTypes[key] = new TreeType(name, color, texture);
+    }
+    return this.treeTypes[key];
+  }
+}
+
+// 每棵樹都只儲存自己的位置
+class Tree {
+  constructor(x, y, treeType) {
+    this.x = x;
+    this.y = y;
+    this.treeType = treeType;
+  }
+
+  draw() {
+    this.treeType.draw(this.x, this.y);
+  }
+}
+
+// 使用
+const factory = new TreeFactory();
+
+const trees = [];
+
+trees.push(new Tree(10, 20, factory.getTreeType("櫻花", "粉紅", "blossom.png")));
+trees.push(new Tree(15, 25, factory.getTreeType("櫻花", "粉紅", "blossom.png")));
+trees.push(new Tree(20, 30, factory.getTreeType("松樹", "綠色", "pine.png")));
+
+trees.forEach(tree => tree.draw());
+```
+
+這裡只有兩個 `TreeType` 被創建，卻可以重複使用在成千上萬棵樹上，超省資源！
+
+##### 總結一下 Flyweight Pattern 的使用關鍵
+
+1. 有大量物件需要創建，導致記憶體吃緊。
+2. 這些物件中有許多重複、不變的資料。
+3. 希望優化記憶體使用效率，避免資源浪費。
+
+---
+
+#### 最後整理一下結構型模式的七種類別
+
+| 英文名稱  |  中文名稱  |            解決的問題/用途             |           常見比喻           |
+| ------- | -------- | ------------------------------------ | -------------------------- |
+|  Adapter  | 適配器模式 |         讓不相容的介面也能合作         |    轉接頭、Type-C 轉 USB     |
+| Composite |  組合模式  | 將物件組成樹狀結構，單一與整體一致操作 | 檔案總管、資料夾與檔案的操作 |
+| Decorator | 裝飾器模式 |       動態擴充功能，不動原本結構       |    漢堡加料、濾鏡效果堆疊    |
+|  Facade   |  外觀模式  |         封裝複雜系統的簡單介面         |  飯店櫃檯、電影院一站式服務  |
+|   Proxy   |  代理模式  |           控制對某物件的存取           |   經紀人、守門員、虛擬代理   |
+|  Bridge   |  橋接模式  |      分離抽象與實作，各自獨立擴展      |  遙控器 vs. 電視的獨立設計   |
+| Flyweight |  享元模式  |     大量小物件共用資料以節省記憶體     |    字型系統、棋子共用外觀    |
