@@ -1,0 +1,597 @@
+---
+title: 前端也該懂的設計模式：7 種結構型設計模式
+date: 2025-04-20
+category: basics
+abstract: 這篇文章帶你用「生活比喻」搞懂 7 種常見的結構型設計模式，包括適配器、裝飾器、外觀、組合、代理、橋接與享元。用實際例子和日常類比，讓你輕鬆記住每個模式的用途與特點，提升你的程式架構設計力！
+tags: [Design Pattern、程式架構、程式碼維護、前端知識]
+---
+
+- [1. 適配器模式 (Adapter)](#1-適配器模式-adapter)
+- [2. 裝飾器模式 (Decorator)](#2-裝飾器模式-decorator)
+- [3. 外觀模式 (Facade)](#3-外觀模式-facade)
+- [4. 組合模式 (Composite)](#4-組合模式-composite)
+- [5. 代理模式 (Proxy)](#5-代理模式-proxy)
+- [6. 橋接模式 (Bridge)](#6-橋接模式-bridge)
+- [7. 享元模式 (Flyweight)](#7-享元模式-flyweight)
+
+---
+
+### 行為型模式（Behavioral Patterns）
+
+> 你可以把它想成：「物件之間要怎麼互動、溝通」的模式。
+
+不像結構型模式（在意物件之間怎麼組合）或建立型模式（在意物件怎麼被創建），行為型就是**注重流程、交換訊息、誰負責做什麼。**
+
+---
+
+### 1. 觀察者模式 (Observer)
+
+這就像是訂閱一個YouTube頻道：頻道（被觀察者）產生新內容時，所有訂閱者（觀察者）自動收到通知。
+
+```c
+// 新聞發布者（被觀察者）
+class NewsPublisher {
+  constructor() {
+    this.subscribers = []; // 儲存所有訂閱者
+    this.latestNews = null; // 最新新聞
+  }
+
+  // 添加訂閱者
+  subscribe(observer) {
+    if (!this.subscribers.includes(observer)) {
+      this.subscribers.push(observer);
+      console.log(`${observer.name} 已訂閱新聞`);
+    }
+  }
+
+  // 移除訂閱者
+  unsubscribe(observer) {
+    const index = this.subscribers.indexOf(observer);
+    if (index !== -1) {
+      this.subscribers.splice(index, 1);
+      console.log(`${observer.name} 已取消訂閱`);
+    }
+  }
+
+  // 發布新聞並通知所有訂閱者
+  publishNews(news) {
+    this.latestNews = news;
+    console.log(`發布新聞: ${news}`);
+    this.notifyAll();
+  }
+
+  // 通知所有訂閱者
+  notifyAll() {
+    for (const subscriber of this.subscribers) {
+      subscriber.update(this.latestNews);
+    }
+  }
+}
+
+// 訂閱者（觀察者）
+class NewsSubscriber {
+  constructor(name) {
+    this.name = name;
+  }
+
+  // 收到通知時執行的更新方法
+  update(news) {
+    console.log(`${this.name} 收到新聞: ${news}`);
+    this.readNews(news);
+  }
+
+  // 閱讀新聞的實際行為
+  readNews(news) {
+    console.log(`${this.name} 正在閱讀: "${news}"`);
+  }
+}
+
+// 使用範例
+const newsChannel = new NewsPublisher();
+
+// 創建訂閱者
+const john = new NewsSubscriber('約翰');
+const mary = new NewsSubscriber('瑪麗');
+const bob = new NewsSubscriber('鮑伯');
+
+// 添加訂閱者
+newsChannel.subscribe(john);
+newsChannel.subscribe(mary);
+newsChannel.subscribe(bob);
+
+// 發布新聞
+newsChannel.publishNews('台灣今日氣溫飆升至35度');
+
+// 鮑伯取消訂閱
+newsChannel.unsubscribe(bob);
+
+// 再次發布新聞
+newsChannel.publishNews('明日將有颱風來襲');
+```
+
+##### 總結一下 Observer Pattern 的使用關鍵
+
+1. 解耦合：發布者和訂閱者可以獨立變化，互不影響對方的內部實現
+2. 動態關係：觀察者可以隨時添加或移除，而不需要修改被觀察者的代碼
+3. 開放封閉原則：系統可以在不修改現有代碼的情況下引入新的觀察者
+
+---
+
+### 2. 策略模式（Strategy Patterns）
+
+像是在點外送時選擇付款方式：「信用卡付款」或「貨到付款」是兩種策略。根據你的選擇，系統會做不同的事，但會是相同的結果（都會收到貨）。
+
+```c
+// 支付處理上下文 (Context)
+class PaymentProcessor {
+  constructor() {
+    this.paymentStrategy = null;
+  }
+
+  // 設置支付策略
+  setPaymentStrategy(paymentStrategy) {
+    this.paymentStrategy = paymentStrategy;
+  }
+
+  // 處理支付
+  processPayment(amount) {
+    if (!this.paymentStrategy) {
+      throw new Error('請先設置支付策略！');
+    }
+    
+    return this.paymentStrategy.pay(amount);
+  }
+}
+
+// 策略接口（在 JS 中以共同方法約定代替接口）
+// 每個具體策略都需要實現 pay 方法
+
+// 信用卡支付策略
+class CreditCardStrategy {
+  constructor(cardNumber, name, cvv, expiryDate) {
+    this.cardNumber = cardNumber;
+    this.name = name;
+    this.cvv = cvv;
+    this.expiryDate = expiryDate;
+  }
+
+  pay(amount) {
+    console.log(`使用信用卡支付 ${amount} 元`);
+    console.log(`卡號: ${this.maskCardNumber()}`);
+    return `信用卡支付 ${amount} 元成功`;
+  }
+
+  // 隱藏信用卡號碼中間部分
+  maskCardNumber() {
+    const last4Digits = this.cardNumber.slice(-4);
+    return `**** **** **** ${last4Digits}`;
+  }
+}
+
+// PayPal 支付策略
+class PayPalStrategy {
+  constructor(email, password) {
+    this.email = email;
+    this.password = password;
+  }
+
+  pay(amount) {
+    console.log(`使用 PayPal 支付 ${amount} 元`);
+    console.log(`PayPal 帳號: ${this.email}`);
+    return `PayPal 支付 ${amount} 元成功`;
+  }
+}
+
+// 行動支付策略
+class MobilePayStrategy {
+  constructor(phoneNumber) {
+    this.phoneNumber = phoneNumber;
+  }
+
+  pay(amount) {
+    console.log(`使用行動支付完成 ${amount} 元交易`);
+    console.log(`手機號碼: ${this.formatPhoneNumber()}`);
+    return `行動支付 ${amount} 元成功`;
+  }
+
+  // 格式化電話號碼，只顯示部分數字
+  formatPhoneNumber() {
+    return `${this.phoneNumber.slice(0, 3)}****${this.phoneNumber.slice(-3)}`;
+  }
+}
+
+// 使用範例
+const paymentProcessor = new PaymentProcessor();
+
+// 客戶選擇信用卡支付
+const creditCardPayment = new CreditCardStrategy('1234567890123456', '張三', '123', '12/25');
+paymentProcessor.setPaymentStrategy(creditCardPayment);
+console.log(paymentProcessor.processPayment(2000));
+
+console.log('------------------------');
+
+// 客戶切換到 PayPal 支付
+const paypalPayment = new PayPalStrategy('user@example.com', 'password');
+paymentProcessor.setPaymentStrategy(paypalPayment);
+console.log(paymentProcessor.processPayment(1500));
+
+console.log('------------------------');
+
+// 客戶切換到行動支付
+const mobilePayment = new MobilePayStrategy('0912345678');
+paymentProcessor.setPaymentStrategy(mobilePayment);
+console.log(paymentProcessor.processPayment(800));
+
+// 輸出結果：
+// 使用信用卡支付 2000 元
+// 卡號: **** **** **** 3456
+// 信用卡支付 2000 元成功
+// ------------------------
+// 使用 PayPal 支付 1500 元
+// PayPal 帳號: user@example.com
+// PayPal 支付 1500 元成功
+// ------------------------
+// 使用行動支付完成 800 元交易
+// 手機號碼: 091****678
+// 行動支付 800 元成功
+```
+
+##### 總結一下 Observer Pattern 的使用關鍵
+
+1. 消除條件判斷：避免複雜的 if-else 或 switch 語句，使代碼更簡潔清晰
+2. 開放封閉原則：可以輕鬆添加新的策略而不需要修改現有代碼
+3. 運行時選擇：可以根據用戶操作或系統狀態動態切換策略
+4. 分離關注點：每個策略專注於自己的實現，不需要了解其他策略的細節
+
+---
+### 3. 命令模式（Command Patterns）
+
+你不直接叫燈打開，而是寫一張「打開燈」的指令交給助理（遙控器），助理照做。這樣好處是：你可以儲存、排程、或重做/回復指令。
+
+命令模式的會有幾個角色
+
+1. 命令（Command）：封裝了動作及其參數的對象
+2. 接收者（Receiver）：實際執行命令的對象，例如：電視、冷氣..
+3. 調用者（Invoker）：要求命令執行請求的對象，例如：遙控器
+4. 客戶端（Client）：創建命令並設定接收者，例如：使用者
+
+
+```c
+// 接收者類 - 智能家電
+class SmartLight {
+  constructor(location) {
+    this.location = location;
+    this.isOn = false;
+    this.brightness = 0;
+  }
+
+  turnOn() {
+    this.isOn = true;
+    this.brightness = 100;
+    console.log(`${this.location}的燈已打開，亮度：${this.brightness}%`);
+  }
+
+  turnOff() {
+    this.isOn = false;
+    this.brightness = 0;
+    console.log(`${this.location}的燈已關閉`);
+  }
+
+  dimLight(level) {
+    if (!this.isOn) {
+      this.turnOn();
+    }
+    this.brightness = level;
+    console.log(`${this.location}的燈亮度調整為：${this.brightness}%`);
+  }
+}
+
+class SmartTV {
+  constructor(location) {
+    this.location = location;
+    this.isOn = false;
+    this.channel = 1;
+    this.volume = 50;
+  }
+
+  turnOn() {
+    this.isOn = true;
+    console.log(`${this.location}的電視已打開，當前頻道：${this.channel}，音量：${this.volume}`);
+  }
+
+  turnOff() {
+    this.isOn = false;
+    console.log(`${this.location}的電視已關閉`);
+  }
+
+  changeChannel(channel) {
+    if (!this.isOn) {
+      this.turnOn();
+    }
+    this.channel = channel;
+    console.log(`${this.location}的電視切換到頻道 ${this.channel}`);
+  }
+
+  adjustVolume(volume) {
+    if (!this.isOn) {
+      this.turnOn();
+    }
+    this.volume = volume;
+    console.log(`${this.location}的電視音量調整為 ${this.volume}`);
+  }
+}
+
+// 命令接口
+class Command {
+  execute() {
+    throw new Error('子類必須實現 execute 方法');
+  }
+
+  undo() {
+    throw new Error('子類必須實現 undo 方法');
+  }
+}
+
+// 具體命令 - 燈光相關
+class TurnLightOnCommand extends Command {
+  constructor(light) {
+    super();
+    this.light = light;
+    this.previousState = { isOn: light.isOn, brightness: light.brightness };
+  }
+
+  execute() {
+    this.previousState = { isOn: this.light.isOn, brightness: this.light.brightness };
+    this.light.turnOn();
+  }
+
+  undo() {
+    if (this.previousState.isOn) {
+      this.light.dimLight(this.previousState.brightness);
+    } else {
+      this.light.turnOff();
+    }
+  }
+}
+
+class TurnLightOffCommand extends Command {
+  constructor(light) {
+    super();
+    this.light = light;
+    this.previousState = { isOn: light.isOn, brightness: light.brightness };
+  }
+
+  execute() {
+    this.previousState = { isOn: this.light.isOn, brightness: this.light.brightness };
+    this.light.turnOff();
+  }
+
+  undo() {
+    if (this.previousState.isOn) {
+      this.light.turnOn();
+      this.light.dimLight(this.previousState.brightness);
+    }
+  }
+}
+
+class DimLightCommand extends Command {
+  constructor(light, level) {
+    super();
+    this.light = light;
+    this.level = level;
+    this.previousLevel = light.brightness;
+  }
+
+  execute() {
+    this.previousLevel = this.light.brightness;
+    this.light.dimLight(this.level);
+  }
+
+  undo() {
+    this.light.dimLight(this.previousLevel);
+  }
+}
+
+// 具體命令 - 電視相關
+class TurnTVOnCommand extends Command {
+  constructor(tv) {
+    super();
+    this.tv = tv;
+  }
+
+  execute() {
+    this.tv.turnOn();
+  }
+
+  undo() {
+    this.tv.turnOff();
+  }
+}
+
+class TurnTVOffCommand extends Command {
+  constructor(tv) {
+    super();
+    this.tv = tv;
+    this.previousState = {
+      isOn: tv.isOn,
+      channel: tv.channel,
+      volume: tv.volume
+    };
+  }
+
+  execute() {
+    this.previousState = {
+      isOn: this.tv.isOn,
+      channel: this.tv.channel,
+      volume: this.tv.volume
+    };
+    this.tv.turnOff();
+  }
+
+  undo() {
+    if (this.previousState.isOn) {
+      this.tv.turnOn();
+      this.tv.changeChannel(this.previousState.channel);
+      this.tv.adjustVolume(this.previousState.volume);
+    }
+  }
+}
+
+class ChangeChannelCommand extends Command {
+  constructor(tv, channel) {
+    super();
+    this.tv = tv;
+    this.channel = channel;
+    this.previousChannel = tv.channel;
+  }
+
+  execute() {
+    this.previousChannel = this.tv.channel;
+    this.tv.changeChannel(this.channel);
+  }
+
+  undo() {
+    this.tv.changeChannel(this.previousChannel);
+  }
+}
+
+// 複合命令 - 場景模式
+class SceneModeCommand extends Command {
+  constructor(commands) {
+    super();
+    this.commands = commands;
+    this.executedCommands = [];
+  }
+
+  execute() {
+    // 記錄已執行的命令，用於撤銷
+    this.executedCommands = [];
+    for (const command of this.commands) {
+      command.execute();
+      this.executedCommands.push(command);
+    }
+  }
+
+  undo() {
+    // 反向撤銷命令
+    for (let i = this.executedCommands.length - 1; i >= 0; i--) {
+      this.executedCommands[i].undo();
+    }
+  }
+}
+
+// 調用者 - 遙控器
+class RemoteControl {
+  constructor() {
+    this.commands = [];
+    this.commandHistory = [];
+  }
+
+  setCommand(slot, command) {
+    this.commands[slot] = command;
+  }
+
+  pressButton(slot) {
+    if (this.commands[slot]) {
+      this.commands[slot].execute();
+      this.commandHistory.push(this.commands[slot]);
+    }
+  }
+
+  pressUndoButton() {
+    const command = this.commandHistory.pop();
+    if (command) {
+      console.log('撤銷上一個操作...');
+      command.undo();
+    } else {
+      console.log('沒有可撤銷的操作');
+    }
+  }
+
+  executeSequence(commands) {
+    for (const command of commands) {
+      command.execute();
+      this.commandHistory.push(command);
+    }
+  }
+}
+
+// 客戶端代碼
+// 創建接收者
+const livingRoomLight = new SmartLight('客廳');
+const bedroomLight = new SmartLight('臥室');
+const kitchenLight = new SmartLight('廚房');
+const livingRoomTV = new SmartTV('客廳');
+
+// 創建命令
+const livingRoomLightOn = new TurnLightOnCommand(livingRoomLight);
+const livingRoomLightOff = new TurnLightOffCommand(livingRoomLight);
+const livingRoomLightDim = new DimLightCommand(livingRoomLight, 30);
+const bedroomLightOn = new TurnLightOnCommand(bedroomLight);
+const bedroomLightOff = new TurnLightOffCommand(bedroomLight);
+const kitchenLightOn = new TurnLightOnCommand(kitchenLight);
+const kitchenLightOff = new TurnLightOffCommand(kitchenLight);
+const tvOn = new TurnTVOnCommand(livingRoomTV);
+const tvOff = new TurnTVOffCommand(livingRoomTV);
+const tvChangeChannel = new ChangeChannelCommand(livingRoomTV, 8);
+
+// 創建場景模式
+const movieMode = new SceneModeCommand([
+  livingRoomLightDim,
+  tvOn,
+  tvChangeChannel
+]);
+
+const sleepMode = new SceneModeCommand([
+  livingRoomLightOff,
+  tvOff,
+  kitchenLightOff,
+  bedroomLightOn
+]);
+
+// 設置遙控器
+const remote = new RemoteControl();
+remote.setCommand(0, livingRoomLightOn);
+remote.setCommand(1, livingRoomLightOff);
+remote.setCommand(2, bedroomLightOn);
+remote.setCommand(3, bedroomLightOff);
+remote.setCommand(4, kitchenLightOn);
+remote.setCommand(5, kitchenLightOff);
+remote.setCommand(6, tvOn);
+remote.setCommand(7, tvOff);
+remote.setCommand(8, movieMode);
+remote.setCommand(9, sleepMode);
+
+// 使用遙控器
+console.log('=== 使用智能家居系統 ===');
+console.log('打開客廳燈');
+remote.pressButton(0);
+
+console.log('\n調暗客廳燈');
+remote.pressButton(1);
+remote.pressUndoButton();
+
+console.log('\n開啟電影模式');
+remote.pressButton(8);
+
+console.log('\n撤銷電影模式');
+remote.pressUndoButton();
+
+console.log('\n準備睡覺');
+remote.pressButton(9);
+```
+
+
+##### 總結一下 Command Pattern 的使用關鍵
+
+1. 解耦請求者和實現者：發出命令的對象和執行命令的對象完全分離
+2. 可擴展性：輕鬆添加新命令而不影響現有代碼
+3. 組合命令：可以將多個命令組合成一個複合命令（宏命令）
+4. 支持撤銷/重做：命令可以保存狀態，實現撤銷功能
+5. 命令日誌：可以記錄所有命令，實現日誌記錄和恢復系統
+
+---
+
+### 4. 狀態模式（State Pattern）
+
+##### 總結一下 Command Pattern 的使用關鍵
