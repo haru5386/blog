@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Header } from "@/components/header/header";
 import { Suspense } from 'react'
+import { SpeedInsights } from '@vercel/speed-insights/next';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -38,10 +39,11 @@ export default function RootLayout({
         >
           <Header />
           <main className="flex-1">
-      <Suspense fallback={<p>Loading...</p>}>
-      
-      {children}
-      </Suspense></main>
+            <Suspense fallback={<p>Loading...</p>}>
+              {children}
+              <SpeedInsights />
+            </Suspense>
+          </main>
         </ThemeProvider>
       </body>
     </html>
