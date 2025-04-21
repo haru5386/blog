@@ -594,4 +594,507 @@ remote.pressButton(9);
 
 ### 4. 狀態模式（State Pattern）
 
-##### 總結一下 Command Pattern 的使用關鍵
+可以把它想像成一個人有多種「狀態」，每種狀態下，做出來的行為會不一樣。你肚子餓的時候（Hungry），看到炸雞會馬上吃、你飽的時候（Full），看到炸雞會說「算了…等一下吧」、你生病的時候（Sick），看到炸雞會說「我不能吃油炸的…」
+
+而State Pattern 就是在管理這些不同的狀態和對應的行為。
+
+我們舉例來說，這台飲料販賣機有幾種狀態：等待投入錢（IdleState）、有錢了（HasMoneyState）、缺料不能出貨（OutOfStockState），當你對販賣機呼叫 pressButton() 時，不同狀態會有不同行為。
+
+```c
+// 狀態基底（每個狀態都要實作這個介面）
+class State {
+  insertCoin() {}
+  pressButton() {}
+}
+
+// 1. 沒有錢的狀態
+class IdleState extends State {
+  constructor(machine) {
+    super();
+    this.machine = machine;
+  }
+
+  insertCoin() {
+    console.log("🪙 投幣成功！");
+    this.machine.setState(this.machine.hasMoneyState);
+  }
+
+  pressButton() {
+    console.log("❌ 請先投幣！");
+  }
+}
+
+// 2. 有錢的狀態
+class HasMoneyState extends State {
+  constructor(machine) {
+    super();
+    this.machine = machine;
+  }
+
+  insertCoin() {
+    console.log("⚠️ 已經投幣了，不用再投！");
+  }
+
+  pressButton() {
+    if (this.machine.stock > 0) {
+      console.log("🥤 給你一杯珍奶！");
+      this.machine.stock--;
+      this.machine.setState(this.machine.idleState);
+    } else {
+      console.log("🚫 沒有存貨了，退款！");
+      this.machine.setState(this.machine.outOfStockState);
+    }
+  }
+}
+
+// 3. 缺貨的狀態
+class OutOfStockState extends State {
+  constructor(machine) {
+    super();
+    this.machine = machine;
+  }
+
+  insertCoin() {
+    console.log("🚫 缺貨中，不能投幣");
+  }
+
+  pressButton() {
+    console.log("🚫 缺貨中，按也沒用");
+  }
+}
+
+// 販賣機本體
+
+class BubbleTeaMachine {
+  constructor(stock = 1) {
+    this.idleState = new IdleState(this);
+    this.hasMoneyState = new HasMoneyState(this);
+    this.outOfStockState = new OutOfStockState(this);
+
+    this.state = stock > 0 ? this.idleState : this.outOfStockState;
+    this.stock = stock;
+  }
+
+  setState(state) {
+    this.state = state;
+  }
+
+  insertCoin() {
+    this.state.insertCoin();
+  }
+
+  pressButton() {
+    this.state.pressButton();
+  }
+}
+
+// 實際操作
+const machine = new BubbleTeaMachine(2);
+
+machine.pressButton(); // ❌ 請先投幣！
+machine.insertCoin();  // 🪙 投幣成功！
+machine.pressButton(); // 🥤 給你一杯珍奶！
+
+machine.insertCoin();  // 🪙 投幣成功！
+machine.pressButton(); // 🥤 給你一杯珍奶！（這是最後一杯）
+
+machine.insertCoin();  // 🚫 缺貨中，不能投幣
+machine.pressButton(); // 🚫 缺貨中，按也沒用
+```
+
+##### 總結一下 State Pattern 的使用關鍵
+
+1. **消除龐大的條件分支**：不需要大量的if-else或switch來處理不同狀態，每個狀態都被封裝在獨立的類中
+2. **單一職責原則**：每個狀態類只關注特定狀態下的行為
+3. **開放封閉原則**：可以輕鬆添加新的狀態而不修改現有代碼
+4. **狀態轉換的顯式化**：狀態之間的轉換關係明確可見，便於理解和維護
+5. **狀態行為的一致性**：確保在特定狀態下的所有行為保持一致
+
+---
+
+### 5. 仲介者模式（Mediator pattern）
+
+> 把一群物件之間的溝通，統一交給一個中介處理，減少耦合。
+
+想像一下，如果你在一個聊天室裡，有 5 個人，每個人要私訊其他人，就要知道對方是誰、怎麼聯絡，程式裡就是一堆「A 傳給 B」、「B 回給 C」，很亂。
+
+但如果有一個「群組管理員」（Mediator），大家只要跟他講：「幫我通知一下誰誰誰」，整個溝通就簡單很多，彼此之間不需要知道對方，只要跟「中間人」打交道就好。
+
+舉例來說：我們在聊天室傳訊息，每個人都是一個 User，他們不直接傳訊息給彼此，而是通通交給 ChatRoom（仲介者）來轉達
+
+```c
+// 仲介者接口
+class ChatMediator {
+  sendMessage(message, sender) {
+    throw new Error('子類必須實現 sendMessage 方法');
+  }
+  
+  addUser(user) {
+    throw new Error('子類必須實現 addUser 方法');
+  }
+  
+  removeUser(user) {
+    throw new Error('子類必須實現 removeUser 方法');
+  }
+}
+
+// 具體仲介者：聊天室
+class ChatRoom extends ChatMediator {
+  constructor(name) {
+    super();
+    this.name = name;
+    this.users = [];
+    this.messageHistory = [];
+    
+    console.log(`聊天室 "${this.name}" 已創建`);
+  }
+  
+  // 添加用戶到聊天室
+  addUser(user) {
+    this.users.push(user);
+    console.log(`用戶 ${user.name} 加入聊天室 "${this.name}"`);
+    this.broadcastSystemMessage(`${user.name} 加入了聊天室`);
+  }
+  
+  // 從聊天室移除用戶
+  removeUser(user) {
+    const index = this.users.indexOf(user);
+    if (index !== -1) {
+      this.users.splice(index, 1);
+      console.log(`用戶 ${user.name} 離開聊天室 "${this.name}"`);
+      this.broadcastSystemMessage(`${user.name} 離開了聊天室`);
+    }
+  }
+  
+  // 發送消息
+  sendMessage(message, sender) {
+    // 保存消息記錄
+    const timestamp = new Date().toLocaleTimeString();
+    const formattedMessage = `[${timestamp}] ${sender.name}: ${message}`;
+    this.messageHistory.push(formattedMessage);
+    
+    // 將消息發送給所有用戶（除了發送者）
+    this.users.forEach(user => {
+      if (user !== sender) {
+        user.receiveMessage(message, sender);
+      }
+    });
+  }
+  
+  // 發送私聊消息
+  sendPrivateMessage(message, sender, receiver) {
+    const timestamp = new Date().toLocaleTimeString();
+    const formattedMessage = `[${timestamp}] ${sender.name} 私聊給 ${receiver.name}: ${message}`;
+    this.messageHistory.push(formattedMessage);
+    
+    // 只發送給特定接收者
+    const targetUser = this.users.find(user => user === receiver);
+    if (targetUser) {
+      targetUser.receivePrivateMessage(message, sender);
+    } else {
+      sender.receiveSystemMessage(`用戶 ${receiver.name} 不存在或已離開聊天室`);
+    }
+  }
+  
+  // 發送系統消息給所有用戶
+  broadcastSystemMessage(message) {
+    const timestamp = new Date().toLocaleTimeString();
+    const formattedMessage = `[${timestamp}] [系統]: ${message}`;
+    this.messageHistory.push(formattedMessage);
+    
+    this.users.forEach(user => {
+      user.receiveSystemMessage(message);
+    });
+  }
+  
+  // 列出所有在線用戶
+  listUsers() {
+    return this.users.map(user => user.name);
+  }
+  
+  // 獲取消息歷史
+  getMessageHistory() {
+    return this.messageHistory;
+  }
+}
+
+// 組件基礎類：用戶
+class User {
+  constructor(name) {
+    this.name = name;
+    this.chatMediator = null;
+  }
+  
+  // 設置仲介者
+  setChatMediator(mediator) {
+    this.chatMediator = mediator;
+  }
+  
+  // 發送訊息
+  send(message) {
+    if (!this.chatMediator) {
+      console.log(`${this.name}: 尚未加入聊天室`);
+      return;
+    }
+    
+    console.log(`${this.name} 發送訊息: ${message}`);
+    this.chatMediator.sendMessage(message, this);
+  }
+  
+  // 發送私聊消息
+  sendPrivate(message, receiverName) {
+    if (!this.chatMediator) {
+      console.log(`${this.name}: 尚未加入聊天室`);
+      return;
+    }
+    
+    // 找到接收者
+    const receiver = this.chatMediator.users.find(user => user.name === receiverName);
+    if (receiver) {
+      console.log(`${this.name} 發送私聊訊息給 ${receiverName}: ${message}`);
+      this.chatMediator.sendPrivateMessage(message, this, receiver);
+    } else {
+      console.log(`${this.name}: 找不到用戶 ${receiverName}`);
+    }
+  }
+  
+  // 接收訊息
+  receiveMessage(message, sender) {
+    console.log(`${this.name} 收到來自 ${sender.name} 的訊息: ${message}`);
+  }
+  
+  // 接收私聊消息
+  receivePrivateMessage(message, sender) {
+    console.log(`${this.name} 收到來自 ${sender.name} 的私聊訊息: ${message}`);
+  }
+  
+  // 接收系統消息
+  receiveSystemMessage(message) {
+    console.log(`${this.name} 收到系統訊息: ${message}`);
+  }
+  
+  // 查看在線用戶
+  viewOnlineUsers() {
+    if (!this.chatMediator) {
+      console.log(`${this.name}: 尚未加入聊天室`);
+      return [];
+    }
+    
+    const users = this.chatMediator.listUsers();
+    console.log(`${this.name} 查看在線用戶: ${users.join(', ')}`);
+    return users;
+  }
+  
+  // 查看消息歷史
+  viewMessageHistory() {
+    if (!this.chatMediator) {
+      console.log(`${this.name}: 尚未加入聊天室`);
+      return [];
+    }
+    
+    const history = this.chatMediator.getMessageHistory();
+    console.log(`${this.name} 查看消息歷史:`);
+    history.forEach(msg => console.log(`  ${msg}`));
+    return history;
+  }
+  
+  // 加入聊天室
+  joinChatRoom(chatRoom) {
+    this.chatMediator = chatRoom;
+    chatRoom.addUser(this);
+  }
+  
+  // 離開聊天室
+  leaveChatRoom() {
+    if (this.chatMediator) {
+      this.chatMediator.removeUser(this);
+      this.chatMediator = null;
+    }
+  }
+}
+
+// 具體組件：高級用戶
+class AdminUser extends User {
+  constructor(name) {
+    super(name);
+    this.isAdmin = true;
+  }
+  
+  // 管理員可以踢出用戶
+  kickUser(userName) {
+    if (!this.chatMediator) {
+      console.log(`${this.name}: 尚未加入聊天室`);
+      return;
+    }
+    
+    const user = this.chatMediator.users.find(user => user.name === userName);
+    if (user && !user.isAdmin) {
+      console.log(`管理員 ${this.name} 將 ${userName} 踢出聊天室`);
+      user.leaveChatRoom();
+    } else if (user && user.isAdmin) {
+      console.log(`${this.name}: 無法踢出其他管理員`);
+    } else {
+      console.log(`${this.name}: 找不到用戶 ${userName}`);
+    }
+  }
+  
+  // 管理員可以清除聊天室歷史記錄
+  clearChatHistory() {
+    if (!this.chatMediator) {
+      console.log(`${this.name}: 尚未加入聊天室`);
+      return;
+    }
+    
+    console.log(`管理員 ${this.name} 清除了聊天室歷史記錄`);
+    this.chatMediator.messageHistory = [];
+    this.chatMediator.broadcastSystemMessage('聊天室歷史記錄已被管理員清除');
+  }
+  
+  // 管理員可以發布公告
+  makeAnnouncement(message) {
+    if (!this.chatMediator) {
+      console.log(`${this.name}: 尚未加入聊天室`);
+      return;
+    }
+    
+    console.log(`管理員 ${this.name} 發布公告: ${message}`);
+    this.chatMediator.broadcastSystemMessage(`公告: ${message}`);
+  }
+}
+
+// 使用示例
+console.log('===== 聊天室仲介者模式示例 =====\n');
+
+// 創建聊天室
+const techChatRoom = new ChatRoom('技術討論區');
+
+// 創建用戶
+const alice = new User('Alice');
+const bob = new User('Bob');
+const charlie = new User('Charlie');
+const admin = new AdminUser('Admin');
+
+// 用戶加入聊天室
+alice.joinChatRoom(techChatRoom);
+bob.joinChatRoom(techChatRoom);
+charlie.joinChatRoom(techChatRoom);
+admin.joinChatRoom(techChatRoom);
+
+console.log('\n===== 一般對話 =====');
+// 發送消息
+alice.send('大家好，有人知道如何使用仲介者模式嗎？');
+bob.send('這是一種設計模式，用於減少對象之間的直接依賴關係');
+charlie.send('是的，它通過一個中介對象來協調多個對象之間的互動');
+
+console.log('\n===== 私聊對話 =====');
+// 私聊
+alice.sendPrivate('你能詳細解釋一下嗎？', 'Bob');
+bob.sendPrivate('當然，讓我發你一些參考資料', 'Alice');
+
+console.log('\n===== 管理員功能 =====');
+// 管理員功能
+admin.makeAnnouncement('今晚系統將進行維護，請大家保存重要對話');
+admin.kickUser('Charlie');  // 踢出Charlie
+
+console.log('\n===== 查看用戶和歷史 =====');
+// 查看在線用戶
+bob.viewOnlineUsers();
+
+// 查看消息歷史
+alice.viewMessageHistory();
+
+console.log('\n===== 離開聊天室 =====');
+// 離開聊天室
+bob.leaveChatRoom();
+alice.send('還有人在嗎？');
+```
+
+##### 總結一下 Mediator Pattern 的使用關鍵
+
+1. **降低耦合度**：組件之間無需直接了解對方，而是通過仲介者進行通信
+2. **集中控制**：交互邏輯集中在仲介者中，易於管理複雜的互動
+3. **簡化維護**：當需要改變對象間的交互時，只需修改仲介者而不是多個對象
+4. **單一職責**：將「組件間如何互動」的責任從組件本身移到專用的仲介者類中
+
+---
+
+### 6. 責任鏈模式（Chain of Responsibility Pattern）
+
+責任鏈就像是「丟工作下去，然後讓一條線上的人輪流看要不要處理」。
+
+你報了一張 700 塊的單子，小主管看到說：「這我可以處理」，就簽了；如果是 8000，他會說：「太大條了，我處理不了」，然後交給上面的人。這樣一層一層往上傳，就是責任鏈。
+
+```c
+// 抽象 handler
+class Handler {
+  setNext(handler) {
+    this.next = handler;
+    return handler; // 方便鏈式寫法
+  }
+
+// 三個請假關卡
+  handle(request) {
+    if (this.next) {
+      return this.next.handle(request);
+    } else {
+      console.log("❌ 沒有人能處理這個請求");
+    }
+  }
+}
+
+class TeamLead extends Handler {
+  handle(request) {
+    if (request.days <= 1) {
+      console.log(`✅ 小組長批准了 ${request.name} 請 ${request.days} 天假`);
+    } else {
+      console.log(`➡️ 小組長無法處理 ${request.days} 天，往上交`);
+      super.handle(request);
+    }
+  }
+}
+
+class Manager extends Handler {
+  handle(request) {
+    if (request.days <= 3) {
+      console.log(`✅ 經理批准了 ${request.name} 請 ${request.days} 天假`);
+    } else {
+      console.log(`➡️ 經理也不能批 ${request.days} 天，交給老闆`);
+      super.handle(request);
+    }
+  }
+}
+
+class CEO extends Handler {
+  handle(request) {
+    console.log(`👑 老闆說 OK！${request.name} 可以請 ${request.days} 天`);
+  }
+}
+
+// 組裝責任鏈
+const teamLead = new TeamLead();
+const manager = new Manager();
+const ceo = new CEO();
+
+teamLead.setNext(manager).setNext(ceo);
+
+// 使用
+teamLead.handle({ name: "小明", days: 1 });
+// ✅ 小組長批准了 小明 請 1 天假
+
+teamLead.handle({ name: "小美", days: 2 });
+// ➡️ 小組長無法處理 2 天，往上交
+// ✅ 經理批准了 小美 請 2 天假
+
+teamLead.handle({ name: "阿強", days: 5 });
+// ➡️ 小組長無法處理 5 天，往上交
+// ➡️ 經理也不能批 5 天，交給老闆
+// 👑 老闆說 OK！阿強 可以請 5 天
+
+```
+
+##### 總結一下 Chain of Responsibility Pattern 的使用關鍵
+
+1. 解耦請求發送者和接收者：發送者只需知道鏈的第一個節點，不需要知道誰會處理請求
+2. 動態組織處理流程：可以在運行時動態改變鏈的結構，增加、移除或重排序處理者
+3. 分散處理責任：每個處理者只關注自己能處理的請求類型，符合單一職責原則
+4. 靈活的請求處理：可以讓請求被多個處理者部分處理，或者決定在某個點終止處理
