@@ -29,6 +29,7 @@
 12. react rerender 機制
 13. 檔案系統與權限
 14. WebSocket、SSE
+15. web worker
 
 # project
 

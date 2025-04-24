@@ -1,18 +1,18 @@
 ---
-title: 前端也該懂的設計模式：7 種結構型設計模式
-date: 2025-04-20
+title: 前端也該懂的設計模式：常見的行為型模式
+date: 2025-04-24
 category: basics
-abstract: 這篇文章帶你用「生活比喻」搞懂 7 種常見的結構型設計模式，包括適配器、裝飾器、外觀、組合、代理、橋接與享元。用實際例子和日常類比，讓你輕鬆記住每個模式的用途與特點，提升你的程式架構設計力！
+abstract: 這次介紹了常見的七種行為型模型，行為型關注的是流程、交換訊息、誰負責做什麼。有可能你已經常常再用這些模式，卻不知道這些模式是什麼，這次帶你來了解行為型模型在做什麼。
 tags: [Design Pattern、程式架構、程式碼維護、前端知識]
 ---
 
-- [1. 適配器模式 (Adapter)](#1-適配器模式-adapter)
-- [2. 裝飾器模式 (Decorator)](#2-裝飾器模式-decorator)
-- [3. 外觀模式 (Facade)](#3-外觀模式-facade)
-- [4. 組合模式 (Composite)](#4-組合模式-composite)
-- [5. 代理模式 (Proxy)](#5-代理模式-proxy)
-- [6. 橋接模式 (Bridge)](#6-橋接模式-bridge)
-- [7. 享元模式 (Flyweight)](#7-享元模式-flyweight)
+- [1. 觀察者模式 (Observer)](#1-觀察者模式-observer)
+- [2. 策略模式（Strategy Patterns）](#2-策略模式strategy-patterns)
+- [3. 命令模式（Command Patterns）](#3-命令模式command-patterns)
+- [4. 狀態模式（State Pattern）](#4-狀態模式-state-pattern)
+- [5. 仲介者模式（Mediator pattern）](#5-仲介者模式-mediator-pattern)
+- [6. 責任鏈模式（Chain of Responsibility Pattern）](#6-責任鏈模式-chain-of-responsibility-pattern)
+- [7. 迭代器模式（Iterator Pattern）](#7-迭代器模式-iterator-pattern)
 
 ---
 
@@ -26,7 +26,7 @@ tags: [Design Pattern、程式架構、程式碼維護、前端知識]
 
 ### 1. 觀察者模式 (Observer)
 
-這就像是訂閱一個YouTube頻道：頻道（被觀察者）產生新內容時，所有訂閱者（觀察者）自動收到通知。
+這就像是訂閱一個 YouTube 頻道：頻道（被觀察者）產生新內容時，所有訂閱者（觀察者）自動收到通知。
 
 ```c
 // 新聞發布者（被觀察者）
@@ -138,7 +138,7 @@ class PaymentProcessor {
     if (!this.paymentStrategy) {
       throw new Error('請先設置支付策略！');
     }
-    
+
     return this.paymentStrategy.pay(amount);
   }
 }
@@ -244,6 +244,7 @@ console.log(paymentProcessor.processPayment(800));
 4. 分離關注點：每個策略專注於自己的實現，不需要了解其他策略的細節
 
 ---
+
 ### 3. 命令模式（Command Patterns）
 
 你不直接叫燈打開，而是寫一張「打開燈」的指令交給助理（遙控器），助理照做。這樣好處是：你可以儲存、排程、或重做/回復指令。
@@ -254,7 +255,6 @@ console.log(paymentProcessor.processPayment(800));
 2. 接收者（Receiver）：實際執行命令的對象，例如：電視、冷氣..
 3. 調用者（Invoker）：要求命令執行請求的對象，例如：遙控器
 4. 客戶端（Client）：創建命令並設定接收者，例如：使用者
-
 
 ```c
 // 接收者類 - 智能家電
@@ -581,7 +581,6 @@ console.log('\n準備睡覺');
 remote.pressButton(9);
 ```
 
-
 ##### 總結一下 Command Pattern 的使用關鍵
 
 1. 解耦請求者和實現者：發出命令的對象和執行命令的對象完全分離
@@ -596,7 +595,7 @@ remote.pressButton(9);
 
 可以把它想像成一個人有多種「狀態」，每種狀態下，做出來的行為會不一樣。你肚子餓的時候（Hungry），看到炸雞會馬上吃、你飽的時候（Full），看到炸雞會說「算了…等一下吧」、你生病的時候（Sick），看到炸雞會說「我不能吃油炸的…」
 
-而State Pattern 就是在管理這些不同的狀態和對應的行為。
+而 State Pattern 就是在管理這些不同的狀態和對應的行為。
 
 我們舉例來說，這台飲料販賣機有幾種狀態：等待投入錢（IdleState）、有錢了（HasMoneyState）、缺料不能出貨（OutOfStockState），當你對販賣機呼叫 pressButton() 時，不同狀態會有不同行為。
 
@@ -704,7 +703,7 @@ machine.pressButton(); // 🚫 缺貨中，按也沒用
 
 ##### 總結一下 State Pattern 的使用關鍵
 
-1. **消除龐大的條件分支**：不需要大量的if-else或switch來處理不同狀態，每個狀態都被封裝在獨立的類中
+1. **消除龐大的條件分支**：不需要大量的 if-else 或 switch 來處理不同狀態，每個狀態都被封裝在獨立的類中
 2. **單一職責原則**：每個狀態類只關注特定狀態下的行為
 3. **開放封閉原則**：可以輕鬆添加新的狀態而不修改現有代碼
 4. **狀態轉換的顯式化**：狀態之間的轉換關係明確可見，便於理解和維護
@@ -728,11 +727,11 @@ class ChatMediator {
   sendMessage(message, sender) {
     throw new Error('子類必須實現 sendMessage 方法');
   }
-  
+
   addUser(user) {
     throw new Error('子類必須實現 addUser 方法');
   }
-  
+
   removeUser(user) {
     throw new Error('子類必須實現 removeUser 方法');
   }
@@ -745,17 +744,17 @@ class ChatRoom extends ChatMediator {
     this.name = name;
     this.users = [];
     this.messageHistory = [];
-    
+
     console.log(`聊天室 "${this.name}" 已創建`);
   }
-  
+
   // 添加用戶到聊天室
   addUser(user) {
     this.users.push(user);
     console.log(`用戶 ${user.name} 加入聊天室 "${this.name}"`);
     this.broadcastSystemMessage(`${user.name} 加入了聊天室`);
   }
-  
+
   // 從聊天室移除用戶
   removeUser(user) {
     const index = this.users.indexOf(user);
@@ -765,14 +764,14 @@ class ChatRoom extends ChatMediator {
       this.broadcastSystemMessage(`${user.name} 離開了聊天室`);
     }
   }
-  
+
   // 發送消息
   sendMessage(message, sender) {
     // 保存消息記錄
     const timestamp = new Date().toLocaleTimeString();
     const formattedMessage = `[${timestamp}] ${sender.name}: ${message}`;
     this.messageHistory.push(formattedMessage);
-    
+
     // 將消息發送給所有用戶（除了發送者）
     this.users.forEach(user => {
       if (user !== sender) {
@@ -780,13 +779,13 @@ class ChatRoom extends ChatMediator {
       }
     });
   }
-  
+
   // 發送私聊消息
   sendPrivateMessage(message, sender, receiver) {
     const timestamp = new Date().toLocaleTimeString();
     const formattedMessage = `[${timestamp}] ${sender.name} 私聊給 ${receiver.name}: ${message}`;
     this.messageHistory.push(formattedMessage);
-    
+
     // 只發送給特定接收者
     const targetUser = this.users.find(user => user === receiver);
     if (targetUser) {
@@ -795,23 +794,23 @@ class ChatRoom extends ChatMediator {
       sender.receiveSystemMessage(`用戶 ${receiver.name} 不存在或已離開聊天室`);
     }
   }
-  
+
   // 發送系統消息給所有用戶
   broadcastSystemMessage(message) {
     const timestamp = new Date().toLocaleTimeString();
     const formattedMessage = `[${timestamp}] [系統]: ${message}`;
     this.messageHistory.push(formattedMessage);
-    
+
     this.users.forEach(user => {
       user.receiveSystemMessage(message);
     });
   }
-  
+
   // 列出所有在線用戶
   listUsers() {
     return this.users.map(user => user.name);
   }
-  
+
   // 獲取消息歷史
   getMessageHistory() {
     return this.messageHistory;
@@ -824,30 +823,30 @@ class User {
     this.name = name;
     this.chatMediator = null;
   }
-  
+
   // 設置仲介者
   setChatMediator(mediator) {
     this.chatMediator = mediator;
   }
-  
+
   // 發送訊息
   send(message) {
     if (!this.chatMediator) {
       console.log(`${this.name}: 尚未加入聊天室`);
       return;
     }
-    
+
     console.log(`${this.name} 發送訊息: ${message}`);
     this.chatMediator.sendMessage(message, this);
   }
-  
+
   // 發送私聊消息
   sendPrivate(message, receiverName) {
     if (!this.chatMediator) {
       console.log(`${this.name}: 尚未加入聊天室`);
       return;
     }
-    
+
     // 找到接收者
     const receiver = this.chatMediator.users.find(user => user.name === receiverName);
     if (receiver) {
@@ -857,53 +856,53 @@ class User {
       console.log(`${this.name}: 找不到用戶 ${receiverName}`);
     }
   }
-  
+
   // 接收訊息
   receiveMessage(message, sender) {
     console.log(`${this.name} 收到來自 ${sender.name} 的訊息: ${message}`);
   }
-  
+
   // 接收私聊消息
   receivePrivateMessage(message, sender) {
     console.log(`${this.name} 收到來自 ${sender.name} 的私聊訊息: ${message}`);
   }
-  
+
   // 接收系統消息
   receiveSystemMessage(message) {
     console.log(`${this.name} 收到系統訊息: ${message}`);
   }
-  
+
   // 查看在線用戶
   viewOnlineUsers() {
     if (!this.chatMediator) {
       console.log(`${this.name}: 尚未加入聊天室`);
       return [];
     }
-    
+
     const users = this.chatMediator.listUsers();
     console.log(`${this.name} 查看在線用戶: ${users.join(', ')}`);
     return users;
   }
-  
+
   // 查看消息歷史
   viewMessageHistory() {
     if (!this.chatMediator) {
       console.log(`${this.name}: 尚未加入聊天室`);
       return [];
     }
-    
+
     const history = this.chatMediator.getMessageHistory();
     console.log(`${this.name} 查看消息歷史:`);
     history.forEach(msg => console.log(`  ${msg}`));
     return history;
   }
-  
+
   // 加入聊天室
   joinChatRoom(chatRoom) {
     this.chatMediator = chatRoom;
     chatRoom.addUser(this);
   }
-  
+
   // 離開聊天室
   leaveChatRoom() {
     if (this.chatMediator) {
@@ -919,14 +918,14 @@ class AdminUser extends User {
     super(name);
     this.isAdmin = true;
   }
-  
+
   // 管理員可以踢出用戶
   kickUser(userName) {
     if (!this.chatMediator) {
       console.log(`${this.name}: 尚未加入聊天室`);
       return;
     }
-    
+
     const user = this.chatMediator.users.find(user => user.name === userName);
     if (user && !user.isAdmin) {
       console.log(`管理員 ${this.name} 將 ${userName} 踢出聊天室`);
@@ -937,26 +936,26 @@ class AdminUser extends User {
       console.log(`${this.name}: 找不到用戶 ${userName}`);
     }
   }
-  
+
   // 管理員可以清除聊天室歷史記錄
   clearChatHistory() {
     if (!this.chatMediator) {
       console.log(`${this.name}: 尚未加入聊天室`);
       return;
     }
-    
+
     console.log(`管理員 ${this.name} 清除了聊天室歷史記錄`);
     this.chatMediator.messageHistory = [];
     this.chatMediator.broadcastSystemMessage('聊天室歷史記錄已被管理員清除');
   }
-  
+
   // 管理員可以發布公告
   makeAnnouncement(message) {
     if (!this.chatMediator) {
       console.log(`${this.name}: 尚未加入聊天室`);
       return;
     }
-    
+
     console.log(`管理員 ${this.name} 發布公告: ${message}`);
     this.chatMediator.broadcastSystemMessage(`公告: ${message}`);
   }
@@ -1098,3 +1097,126 @@ teamLead.handle({ name: "阿強", days: 5 });
 2. 動態組織處理流程：可以在運行時動態改變鏈的結構，增加、移除或重排序處理者
 3. 分散處理責任：每個處理者只關注自己能處理的請求類型，符合單一職責原則
 4. 靈活的請求處理：可以讓請求被多個處理者部分處理，或者決定在某個點終止處理
+
+---
+
+### 7. 迭代器模式（Iterator Pattern）
+
+想像你有一個裝滿糖果的罐子（可能是陣列、物件、Set、Map），你想要一顆一顆地拿出來吃，但你不在意裡面是怎麼存的，也不想自己去算 index 或用 for 迴圈。
+
+這時候你就需要一個人（Iterator），每次你說「下一個」他就幫你拿一顆給你，而且還會貼心告訴你「沒了哦！」
+
+這種「逐個訪問集合內容」但又不暴露集合內部實作細節的方式，就是迭代器模式。
+
+我們常常用到的 for of 就是迭代器
+
+```c
+const arr = [10, 20, 30];
+for (const item of arr) {
+  console.log(item); // 10, 20, 30
+}
+```
+
+自己做一個迭代器可以用 `Symbol.iterator`，我們先來解釋這是什麼。
+
+Symbol.iterator 是 JavaScript 的一個內建符號（symbol），它用來告訴 JS 你的物件「可以被迭代」，也就是可以用 for...of 去跑一圈。
+
+它是一個函式，回傳一個「迭代器物件」，這個物件要有個 next() 方法。
+
+```c
+const myIterable = {
+  data: ['🍕', '🍔', '🌮'],
+
+  [Symbol.iterator]() {
+    let index = 0;
+    const items = this.data;
+
+    return {
+      next() {
+        if (index < items.length) {
+          return { value: items[index++], done: false };
+        } else {
+          return { done: true };
+        }
+      }
+    };
+  }
+};
+
+for (const food of myIterable) {
+  console.log('吃到：', food);
+}
+```
+
+輸出：
+
+```
+吃到： 🍕
+吃到： 🍔
+吃到： 🌮
+```
+
+好，那我們用函式建構的方式來打造一個迭代器
+
+```c
+// 糖果罐（自訂集合）
+function CandyBox(candies) {
+  this.candies = candies;
+
+  // 提供自己的 iterator
+  this[Symbol.iterator] = function () {
+    let index = 0;
+    const candies = this.candies;
+
+    return {
+      next() {
+        if (index < candies.length) {
+          return { value: candies[index++], done: false };
+        } else {
+          return { done: true };
+        }
+      }
+    };
+  };
+}
+
+// 使用它
+const myBox = new CandyBox(['🍬', '🍭', '🍫']);
+
+for (const candy of myBox) {
+  console.log('拿到糖果:', candy);
+}
+```
+
+輸出：
+
+```
+拿到糖果: 🍬
+拿到糖果: 🍭
+拿到糖果: 🍫
+```
+
+##### 總結一下 Iterator Pattern 的重點
+
+1. 迭代器就是幫你「一個一個拿資料」的幫手
+2. 不用你自己管 index、長度、內部結構
+3. 你只要叫「next()」，它就會說：「這是你的資料」「沒資料了」
+4. 在 JS 裡配合 for...of 最方便
+
+---
+
+我們以上總共介紹了七種行為型模式，但他其實還有很多，下面簡單介紹了下常見的行為型模式並對照其應用情境。
+
+| 模式名稱                | 簡介（口語化）                                                     | 常見應用情境                                        |
+| ----------------------- | ------------------------------------------------------------------ | --------------------------------------------------- |
+| Chain of Responsibility | 像是客服轉接，每個處理者都有機會處理請求，沒處理就往下一個傳。     | 請求審核流程、Middleware 處理鏈                     |
+| Command                 | 把「行為」包成物件，可以儲存、排程或取消。                         | Undo/Redo 系統、按鈕點擊觸發動作                    |
+| Iterator                | 提供一種方法，讓你逐一訪問集合元素，不暴露集合內部實作細節。       | 自訂可迭代資料結構、遍歷 Tree/Graph                 |
+| Mediator                | 像個中介人，負責協調各個物件間的溝通，大家不直接聯絡彼此。         | Chatroom 系統、表單欄位依序啟用（欄位間依賴）       |
+| Memento                 | 存取物件的狀態快照，日後可以復原。                                 | 遊戲儲存點、文字編輯器的復原功能                    |
+| Observer                | 一群訂閱者會被通知某件事發生，像是追蹤股票價格一樣。               | UI 元件自動更新、事件發布系統（Event Bus、pub/sub） |
+| State                   | 根據內部狀態不同，物件行為會變。                                   | 訂單流程管理、角色行為切換                          |
+| Strategy                | 把演算法拆出來，想換演算法就換一顆。                               | 排序策略切換、付款方式切換、打怪 AI 的策略模式      |
+| Template Method         | 一個流程固定，但步驟細節可以讓子類實作。                           | 檔案轉檔流程、報表產出流程                          |
+| Visitor                 | 把要加在物件上的操作抽出來，讓你在不動到原本類別的情況下新增行為。 | 編譯器處理 AST、畫圖程式不同形狀的 visitor          |
+| Interpreter             | 針對語法和語言設計，做出可解讀的系統。                             | 計算器、條件過濾語法（像是搜尋語法解析）            |
