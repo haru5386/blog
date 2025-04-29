@@ -1,0 +1,445 @@
+---
+title: 讓瀏覽器不再卡卡：用 Web Worker 把重活交給背景工人！
+date: 2025-04-29
+category: basics
+abstract: 當你的 JavaScript 程式碼忙著跑資料處理、圖片濾鏡、複雜計算時，畫面卡頓、UI 無法回應就是常見結果。Web Worker 就像瀏覽器裡的背景工人，幫你把吃重的任務移出主線程執行，讓頁面保持流暢。這篇文章用簡單範例帶你認識 Web Worker 的基本原理、限制、資料傳輸方式，以及各種 Worker 類型（Dedicated, Shared, Service Worker）的適用情境與實作技巧，讓你能在對的場景下正確使用它們。
+tags: [web worker、前端知識]
+---
+
+#### 簡單說：Web Worker 是瀏覽器裡的「背景工人」
+
+想像你在做一個網頁應用，比如：做資料計算（像是濾鏡效果、圖片處理）、和 API 連線後要處理一大堆資料、寫個小遊戲或動畫效果。
+
+如果這些事都放在主線程（main thread）上跑，也就是你寫 JS 的地方，畫面就會卡卡的、整個頁面可能會當掉。因為主線程同時要處理 UI（畫面更新、使用者操作）和你寫的邏輯，工作量太大就會卡。這時候就可以把重的計算、資料處理，丟給 Web Worker 幫你處理，像請一個小工人去旁邊做事，等他做好再回報給你。
+
+忘記 thread 是什麼的，可以往[這邊](/blog/basics/5)複習一下，我們簡單來說，web worker 這個 thread 會存在 render process，也就是每個分頁會有一個 web worker，他和 main thread 共享一個 process，但是有自己獨立的執行環境。main thread 執行 JavaScript、處理 DOM、CSS 等。
+
+而 web worker 有一些限制：
+
+1. **不能直接操作 DOM** ：Worker 無法直接修改頁面元素，要改頁面得通過主線程
+2. **有限的全局變數** ：在 Worker 中，你沒有 window 對象，也不能用 document、alert() 等
+3. **獨立環境** ：Worker 有自己的全局環境，不能直接訪問 main thread 的變數，但能通過**消息傳遞**來溝通，就像兩個人用對講機交談一樣。
+
+我們先舉一個簡單的例子，讓你實際感受一下 web worker。
+
+```c
+// main.js
+const worker = new Worker('worker.js'); // 啟動一個 Worker
+
+worker.postMessage(1000000000); // 丟一個大數字給他算
+
+worker.onmessage = function (e) {
+  console.log('工人算完了：', e.data);
+};
+```
+
+```
+// worker.js
+self.onmessage = function (e) {
+  let total = 0;
+  for (let i = 0; i < e.data; i++) {
+    total += i;
+  }
+  self.postMessage(total); // 把結果丟回主線程
+};
+```
+
+main thread 把麻煩的運算丟給 worker，不會被卡住，這樣你看到的畫面還是滑順的！
+
+我們詳細說明一下 web worker 可用與不可用的功能。
+
+可以使用的功能：
+
+- 所有的 `ECMAScript` 功能（標準 JavaScript）
+- `setTimeout()`, `setInterval()`等定時器函數
+- `XMLHttpRequest` 和 `fetch API`（可以發送網絡請求）
+- `navigator` 對象的一部分功能
+- `location` 對象（只讀）
+- `importScripts()` 方法（導入其他腳本）
+- `WebSockets`
+- `IndexedDB`（瀏覽器數據庫）
+- 自定義事件和標準事件
+
+不能使用的功能：
+
+- `DOM` 操作（不能訪問 document, window 等）
+- `alert()`, `confirm()`, `prompt()` 等彈窗方法
+- 主線程變量（不共享內存狀態，只能通過消息通信）
+- 父頁面的 `cookies` 和 `localStorage`
+
+數據傳遞機制
+當你使用 `postMessage()` 傳送數據時，數據會被複製而不是共享。這是因為 Worker 和主線程不共享內存。
+對於大型數據，可以使用 Transferable Objects：
+
+```c
+// 創建一個大型數組緩衝區
+const buffer = new ArrayBuffer(1024 * 1024);
+
+// 將其傳輸（而非複製）給 worker
+worker.postMessage({ data: buffer }, [buffer]);
+```
+
+使用 Transferable Objects 後，原始線程將無法再訪問該數據，所有權被轉移到了目標線程。
+
+另外，使用上要注意這幾點：
+
+- Worker 文件必須獨立：Worker 代碼必須放在單獨的 JS 文件中
+- 注意同源策略：Worker 文件必須跟主頁面同源（相同協議、域名和端口）
+- 數據傳輸成本：傳給 Worker 的數據是複製的，不是共享的，所以傳大量數據要小心
+- 錯誤處理：記得設置 `onerror` 處理 Worker 中可能出現的錯誤
+
+#### web worker 常見使用場景
+
+1. **大量數據處理** ：比如處理巨大的數組、表格數據
+2. **圖片處理** ：濾鏡、縮放、壓縮等
+3. **複雜計算** ：科學計算、金融模型、加密解密
+4. **網絡操作** ：在後台傳輸數據，同時保持界面流暢
+
+### 不同類型的 Worker
+
+除了基本的 Web Worker，還有其他幾種 Worker：
+
+1. Dedicated Worker：就是我們上面談的那種，只能被產生它的那個頁面使用。這是**最常見**，也最簡單。
+2. Shared Worker：多個頁面可以共用一個 Worker（比如開了多個分頁或 iframe）。
+3. Service Worker：特殊的 Worker，主要用於實現離線瀏覽、推送通知等功能。
+
+我們再一個一個來看。
+
+#### 1. Dedicated Worker（專用 Worker）
+
+這是最基本且最常用的 Worker 類型，就是我們前面介紹的那種。
+
+特點：
+
+- 專屬於創建它的頁面：一個 Dedicated Worker 只能被創建它的頁面使用和控制
+- 生命週期：跟隨創建它的頁面，頁面關閉時 Worker 就被終止
+- 通信方式：使用 postMessage() 和 onmessage 事件直接與主線程通信
+
+適用場景：
+
+- 處理單個頁面的複雜計算
+- 頁面內的數據處理
+- 不需要跨頁面共享的任務
+
+#### 2. Shared Worker（共享 Worker）
+
+Shared Worker 是一種可以被多個瀏覽器窗口、標籤頁或 iframe 共同使用的 Worker。
+
+特點：
+
+- 跨頁面共享：同一個源（相同的協議、域名和端口）下的多個頁面可以共用一個 Shared Worker
+- 通信更複雜：需要通過 port 對象進行通信
+- 生命週期：只要有一個連接到它的頁面存在，Shared Worker 就會繼續運行
+- 有限支持：目前 Safari 不支持 Shared Worker
+
+適用場景：
+
+- 多個頁面需要共享同一組數據
+- 需要在多個頁面間協調工作
+- 減少重複計算和資源使用
+
+```c
+// 在多個頁面中使用的 JavaScript 代碼
+const sharedWorker = new SharedWorker('shared-worker.js');
+
+// 必須通過 port 對象通信
+sharedWorker.port.start(); // 開始通信
+
+// 發送消息給 Worker
+sharedWorker.port.postMessage({
+  action: 'increment',
+  windowName: window.name || '未命名窗口'
+});
+
+// 接收 Worker 的消息
+sharedWorker.port.onmessage = function(event) {
+  console.log('從 Shared Worker 收到數據:', event.data);
+  document.getElementById('counter').textContent = `當前計數: ${event.data.count}`;
+  document.getElementById('connections').textContent = `連接數: ${event.data.connections}`;
+};
+
+// 頁面關閉時通知 Worker
+window.addEventListener('beforeunload', function() {
+  sharedWorker.port.postMessage({
+    action: 'disconnect',
+    windowName: window.name || '未命名窗口'
+  });
+});
+```
+
+```c
+// shared-worker.js
+
+let counter = 0;
+
+// 儲存所有連線中的 port 和對應的 windowName
+const connections = new Map(); // key: port, value: windowName
+
+self.onconnect = function(event) {
+  const port = event.ports[0];
+
+  port.onmessage = function(e) {
+    const data = e.data;
+
+    switch (data.action) {
+      case 'increment':
+        counter++;
+        connections.set(port, data.windowName);
+
+        broadcastToAll({
+          count: counter,
+          connections: connections.size,
+          lastUpdatedBy: data.windowName
+        });
+        break;
+
+      case 'disconnect':
+        connections.delete(port);
+        console.log(`${data.windowName} 已斷開連接`);
+        break;
+    }
+  };
+
+  // 立即將目前狀態送給新連線的 port
+  port.postMessage({
+    count: counter,
+    connections: connections.size
+  });
+};
+
+// 廣播給所有 port 的函式
+function broadcastToAll(message) {
+  for (const port of connections.keys()) {
+    try {
+      port.postMessage(message);
+    } catch (err) {
+      console.warn('發送訊息時發生錯誤，將移除連線:', err);
+      connections.delete(port);
+    }
+  }
+}
+```
+
+#### 3. Service Worker（服務 Worker）
+
+Service Worker 是最強大的一種 Worker，主要用於網頁和網路之間的代理。它能夠攔截網絡請求、緩存資源，實現離線訪問等功能。
+
+特點：
+
+- 作用域：控制特定範圍內的所有頁面
+- 生命週期獨立：即使頁面關閉，Service Worker 仍然可以在後台運行
+- 網絡代理能力：可以攔截並修改網絡請求
+- 可持久化：在用戶離開網站後仍然存在，下次訪問時可以立即激活
+- 事件驅動：主要通過監聽各種事件來工作
+
+適用場景：
+
+- PWA
+- 實現離線應用
+- 推送通知
+- 資源緩存策略(快取靜態資源)
+- 網絡請求優化
+- 後台同步
+
+```c
+// 在主頁面註冊 Service Worker
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('/service-worker.js')
+      .then(function(registration) {
+        console.log('Service Worker 註冊成功，範圍：', registration.scope);
+      })
+      .catch(function(error) {
+        console.log('Service Worker 註冊失敗：', error);
+      });
+  });
+}
+
+// 向 Service Worker 發送消息
+function sendMessageToSW(message) {
+  navigator.serviceWorker.controller.postMessage(message);
+}
+
+// 監聽 Service Worker 發來的消息
+navigator.serviceWorker.addEventListener('message', function(event) {
+  console.log('從 Service Worker 收到消息:', event.data);
+});
+
+// 檢查緩存中是否有指定資源的按鈕事件
+document.getElementById('checkCache').addEventListener('click', function() {
+  sendMessageToSW({ action: 'checkCache', url: '/index.html' });
+});
+```
+
+接下來看看 service-worker.js 檔案內容
+
+```c
+
+// 緩存名稱和要緩存的資源列表
+const CACHE_NAME = 'my-site-cache-v1';
+const urlsToCache = [
+  '/',
+  '/index.html',
+  '/styles/main.css',
+  '/scripts/main.js',
+  '/images/logo.png'
+];
+
+// 安裝事件 - 當 Service Worker 被安裝時觸發
+self.addEventListener('install', function(event) {
+  console.log('Service Worker 正在安裝');
+
+  // 等待直到所有資源被緩存
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then(function(cache) {
+        console.log('緩存已打開');
+        return cache.addAll(urlsToCache);
+      })
+  );
+});
+
+// 激活事件 - 當 Service Worker 被激活時觸發
+self.addEventListener('activate', function(event) {
+  console.log('Service Worker 已激活');
+
+  // 清理舊版本的緩存
+  event.waitUntil(
+    caches.keys().then(function(cacheNames) {
+      return Promise.all(
+        cacheNames.filter(function(cacheName) {
+          return cacheName !== CACHE_NAME;
+        }).map(function(cacheName) {
+          return caches.delete(cacheName);
+        })
+      );
+    })
+  );
+});
+
+// 攔截請求事件 - 當頁面發起網絡請求時觸發
+self.addEventListener('fetch', function(event) {
+  // 優先使用緩存，如果緩存中沒有才發起網絡請求
+  event.respondWith(
+    caches.match(event.request)
+      .then(function(response) {
+        // 緩存命中，直接返回緩存的資源
+        if (response) {
+          return response;
+        }
+
+        // 克隆請求。因為請求是一個流，只能使用一次
+        const fetchRequest = event.request.clone();
+
+        // 發起網絡請求
+        return fetch(fetchRequest).then(function(response) {
+          // 檢查是否得到有效的響應
+          if (!response || response.status !== 200 || response.type !== 'basic') {
+            return response;
+          }
+
+          // 克隆響應。因為響應也是一個流，想要緩存它的同時又想返回給瀏覽器
+          const responseToCache = response.clone();
+
+          // 將資源添加到緩存
+          caches.open(CACHE_NAME)
+            .then(function(cache) {
+              cache.put(event.request, responseToCache);
+            });
+
+          return response;
+        });
+      })
+  );
+});
+
+// 接收主線程消息
+self.addEventListener('message', function(event) {
+  console.log('Service Worker 收到消息:', event.data);
+
+  if (event.data.action === 'checkCache') {
+    const url = event.data.url;
+
+    caches.match(url)
+      .then(function(response) {
+        if (response) {
+          event.source.postMessage({
+            result: '找到緩存',
+            url: url,
+            cached: true
+          });
+        } else {
+          event.source.postMessage({
+            result: '未找到緩存',
+            url: url,
+            cached: false
+          });
+        }
+      });
+  }
+});
+
+// 推送通知事件
+self.addEventListener('push', function(event) {
+  console.log('收到推送消息:', event);
+
+  const title = '新消息';
+  const options = {
+    body: '你有一條新消息',
+    icon: '/images/icon.png',
+    badge: '/images/badge.png'
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(title, options)
+  );
+});
+
+// 點擊通知事件
+self.addEventListener('notificationclick', function(event) {
+  console.log('點擊了通知:', event.notification.tag);
+
+  event.notification.close();
+
+  // 打開特定頁面
+  event.waitUntil(
+    clients.openWindow('https://example.com/messages')
+  );
+});
+
+// 後台同步事件
+self.addEventListener('sync', function(event) {
+  if (event.tag === 'sync-messages') {
+    event.waitUntil(
+      syncMessages()
+    );
+  }
+});
+
+// 模擬同步消息的函數
+function syncMessages() {
+  return fetch('/sync-messages')
+    .then(function(response) {
+      return response.json();
+    })
+    .then(function(data) {
+      // 處理同步的數據
+      console.log('同步完成:', data);
+    });
+}
+```
+
+Service Worker 這些事件是 [Service Worker API 規範](https://developer.mozilla.org/en-US/docs/Web/API/ServiceWorkerGlobalScope) 中定義的，例如：
+
+| 事件名稱   | 說明                              |
+| ---------- | --------------------------------- |
+| `install`  | Service Worker 安裝時觸發         |
+| `activate` | 安裝完成後進入作用階段時觸發      |
+| `fetch`    | 任意網頁發出的網路請求會觸發      |
+| `message`  | 主頁面 postMessage() 給 SW 時觸發 |
+| `push`     | 伺服器推播來時觸發                |
+| `sync`     | 背景同步任務觸發時                |
+
+### 結尾
+Web Worker 就像你網頁的「小助手」，默默在後台工作，讓你的主線程專注於提供流暢的用戶體驗。正確使用 Web Worker，你的網頁就能同時處理複雜計算又保持流暢，用戶再也不會抱怨你的網頁卡卡的啦！
+

@@ -11,7 +11,8 @@
 9. 演算法：雙指針 V
 10. Bom/ dom V
 11. 瀏覽器渲染流程 V
-12. design pattern
+12. design pattern V
+13. web worker V
 
 # 代辦
 
@@ -29,7 +30,7 @@
 12. react rerender 機制
 13. 檔案系統與權限
 14. WebSocket、SSE
-15. web worker
+15. SEO優化
 
 # project
 
