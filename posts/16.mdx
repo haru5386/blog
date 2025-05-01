@@ -1,0 +1,139 @@
+---
+title: 前端「打 API」到底在打什麼？從 HTTP 請求到回應的完整流程解析
+date: 2025-05-01
+category: basics
+abstract: 打 API 是每個前端工程師的日常，但它究竟發生了什麼事？這篇文章將用易懂的方式，帶你從輸入網址開始，一步步理解發送 HTTP 請求到伺服器回傳回應的過程，介紹 RESTful API 設計風格、常見的 HTTP 方法（GET、POST、PUT、PATCH、DELETE）、參數傳遞方式、請求與回應標頭（Headers）、常見狀態碼等，幫助你在與後端溝通時更有信心、寫 API 更上手。
+tags: [RESTful API、http request、http response]
+---
+
+常常聽到前端要打 API，那這個打 API 究竟是什麼呢？我們前面講過，在瀏覽器輸入網址會發生什麼事情，打 API 的過程也會發生一樣的事情。一樣會經過 DNS 尋找 IP 位置、TCP 三次握手、TLS 握手 ( https 的話 )，接著瀏覽器會送出 http 請求 Request、接收 http 回應 (Response)。今天這篇文章主要就是在講解**發送請求**與**接收回應**這段過程。
+
+### RESTful API
+
+發送請求與接收回應瀏覽器和伺服器都有約定好的格式，畢竟，如果每次溝通都要弄一套新的溝通規則，那工程師光做這些 infra 就飽了。為了方便瀏覽器和伺服器溝通，我們有了 RESTful API，REST（Representational State Transfer）是一種 API 設計風格。
+
+你可以把 RESTful API 想成「後端提供的一組網址（endpoints）」，前端可以透過這些網址「讀取、修改、刪除資料」。
+
+透過約定好的不同"方法"，會有不同用途。RESTful 總共有 5 個方法：GET、POST、PUT、PATCH、DELETE。各自的用法和常見用途請參考下表。
+
+| 方法   | 說明                 | 常見用途                         |
+| ------ | -------------------- | -------------------------------- |
+| GET    | 從伺服器「取得資料」 | 讀取列表、查詢某筆資料           |
+| POST   | 向伺服器「新增資料」 | 提交表單、新增使用者、送出留言等 |
+| PUT    | 「整筆修改資料」     | 修改整個物件                     |
+| PATCH  | 「部分欄位修改」     | 只改一個欄位，如改名字或密碼     |
+| DELETE | 「刪除資料」         | 刪除留言、刪除使用者等           |
+
+當然，這些都是我們約定好的，如果你想要用 POST 去查詢資料，也沒有不行！只是這樣的約定就沒有意義了，光看方法我看不出來這支 API 想幹嘛。我確實有遇過全部都用 POST 解決所有事情的後端，但邊做會心裡一邊罵髒話，這之後要維護也很難看懂啊！
+
+我們了解這些方法之後，我們來看看有什麼帶上參數的方式。
+
+---
+
+#### 參數
+
+1. Query 參數（Query Parameters）
+
+將參數加在 URL 的尾端，用問號「?」分隔主路徑與參數（例如 https://example.com/items?category=books&page=2 ），多個參數以「&」串接​。此種方式適合無副作用的查詢（例如 `GET` 查詢），伺服器可直接從 URL 中解析出對應參數。參數中的特殊字元會自動進行百分號編碼（percent-encoding）。
+
+2. Request Body（請求內文）
+
+用於傳送請求資料的主要區域，常見格式包括 JSON、原始文字（raw text） 或 XML 等。客戶端必須在 Content-Type 標頭中說明傳送的資料格式 ​（例如 application/json、text/plain 等）。一般而言，GET 請求「不含」請求內文，而 `POST`、`PUT`、`PATCH` 等會在內文帶上要送出的 JSON 或其他內容。
+
+3. 表單資料（Form Data）：常見於 HTML 表單或檔案上傳，根據 enctype 屬性採用不同編碼。主要有兩種形式：
+
+- application/x-www-form-urlencoded：
+  將欄位名稱與值編碼為 key=value 形式，以「&」相連（例如 name=Alice&age=30）；所有非英數字元都會經過百分號編碼 ​。此編碼較簡單，適合傳送純文字欄位，不適用於檔案或二進位內容（若包含二進位資料，須改用 multipart/form-data）。
+- multipart/form-data：
+  將每個欄位或檔案當作獨立段（part）傳送，並以特定的分隔符（boundary）區隔 ​。此格式適合上傳檔案或傳送較複雜的資料。每個段都會有自己的 Content-Disposition、Content-Type 等標頭（例如檔名、類型），因此可以同時處理文字與二進位檔案。
+
+4.  路由參數（Route Parameter） 或 路徑參數（Path Parameter）
+    在許多框架（如 Express、Next.js、Nuxt.js）中，這種語法代表 URL 中某一段會被變數取代的部分。
+
+```c
+fetch('/api/users/123')
+// 請求實際會命中後端的 /api/users/:id 或 /api/users/{id}
+```
+---
+
+#### 常見 HTTP 請求標頭（Request Headers）
+
+以下列出常見的 HTTP Request Headers，當然根據和後端溝通的需要，可以再帶上`cookie`、`csrftoken`，或客製化資訊：lang 等等
+
+1. Authorization：攜帶身份驗證資訊，如 Authorization: Bearer token 用於 JWT/Token 認證或 Basic base64 基本認證等，讓伺服器判斷請求者權限。
+
+2. Content-Type：表示本次請求（或回應）內文的媒體類型。客戶端在送出請求時設定 Content-Type，告訴伺服器「我送的資料格式是什麼」​。例如 Content-Type: application/json 表示內文是 JSON；Content-Type: text/plain 表示純文字；multipart/form-data; boundary=XYZ 表示多段表單格式（通常上傳檔案）。伺服器回傳時同樣在標頭帶上 Content-Type，告訴客戶端回應內容格式。
+3. Accept：表示客戶端願意接受的回應類型（由客戶端告訴伺服器希望收到什麼格式）​。例如 Accept: application/json 表示客戶端只接受 JSON 回應，Accept: text/html 表示希望收到 HTML。當伺服器回應時，會以符合客戶端 Accept 的格式回答，並在回應的 Content-Type 標頭中說明實際傳送的類型。
+
+---
+
+#### 常見 HTTP 回應標頭（Response Headers）
+
+1. **Content-Type**：指定回應內容的格式，如：text/html、application/json。
+2. **Cache-Control**：控制快取方式，例如：no-cache、no-store、max-age=3600。舉個例子：你去一家便當店點了一個便當，老闆說：「你一小時內回來，不用重新點，直接拿！」這就是 Cache-Control: max-age=3600 → 意思是瀏覽器記住這份資料一小時。那麼什麼時候用呢？靜態圖片通常很少改動，就可以使用`Cache-Control: public, max-age=86400`（快取一天）。網站首頁 HTML 每次可能都會更新內容，`Cache-Control: no-cache`（快取，但每次都問伺服器）。銀行帳戶頁面絕對不能快取，因為每個人看到的都不一樣，`Cache-Control: no-store`（完全不要存）
+
+```c
+Cache-Control: public, max-age=3600
+```
+
+3. **Set-Cookie 設定**：讓伺服器回應時設定一組 cookie 給用戶端，瀏覽器會儲存起來並在下次請求時自動夾帶。例如：Set-Cookie: user=abc; HttpOnly; Secure。事實上就是**伺服器請你「記住你是誰」**你去電影院買票，櫃檯會給你一張票根，上面寫了你的位置和場次。下次你回來，他們就會對你說：「喔～你是那個 A 排 5 號的觀眾！」這張票根就像是 Cookie，伺服器透過 `Set-Cookie` 給你資訊，下次你再來，它就會知道你是誰。
+
+```c
+Set-Cookie: sessionId=abc123; HttpOnly; Secure; SameSite=Strict; Max-Age=3600
+```
+
+以上是一個 1 小時後過期的 session cookie，只能透過 HTTPS 傳送，不允許 JavaScript 存取，也不能跨站傳送。
+
+###### cookie 的常用屬性
+| 屬性         | 說明                                                                                      |
+| ------------ | ----------------------------------------------------------------------------------------- |
+| `name=value` | Cookie 的鍵與值。                                                                         |
+| `Expires`    | 指定過期時間（HTTP 日期格式）。                                                           |
+| `Max-Age`    | 與 Expires 功能類似，但以秒為單位。比 Expires 更現代。                                    |
+| `Domain`     | 可使用此 cookie 的網域，例如 `.example.com`（子網域也能用）。                             |
+| `Path`       | 限制 cookie 在哪個路徑下才會附帶，例如 `/admin`。                                         |
+| `Secure`     | 僅在 HTTPS 下才會傳送 cookie，防止明文洩漏。                                              |
+| `HttpOnly`   | JavaScript 不能存取這個 cookie，防止 XSS 攻擊。                                           |
+| `SameSite`   | 限制跨站傳送 cookie 的方式，可防止 CSRF。常見值：`Strict`、`Lax`、`None`（搭配 Secure）。 |
+
+**補充說明 cookie**
+
+api response 可以設定 cookie，但瀏覽器也可以自己設定cookie。瀏覽器這樣用：
+```c
+document.cookie = "username=Alice; path=/; max-age=3600";
+```
+這會建立一個 cookie，只要同網域、路徑符合，瀏覽器下次請求會自動帶上，這個 cookie JavaScript 可以讀、寫（因為沒有 HttpOnly），沒有防護，XSS 攻擊者也能讀取。
+
+
+4. **Access-Control-Allow-Origin**：指定哪些來源可以存取此資源，例如：https://example.com 或 \*。
+
+這邊只是常見的 Response Headers，還有一些 CORS（跨來源資源共享）相關 `Access-Control-Allow-Origin` 等等的，我們之後有機會講到 CORS 再來寫一篇文章。
+
+---
+
+
+#### HTTP 狀態碼（Status Code）
+
+| 類別代碼 | 類型         | 說明                                       |
+| -------- | ------------ | ------------------------------------------ |
+| 1xx      | 資訊         | 很少用，表示請求已被接受、處理中           |
+| 2xx      | 成功         | 一切正常完成請求                           |
+| 3xx      | 重導向       | 要求轉跳到其他網址                         |
+| 4xx      | 用戶端錯誤   | 前端發錯請求，例如格式錯、沒登入、找不到頁 |
+| 5xx      | 伺服器端錯誤 | 伺服器處理時發生錯誤                       |
+
+##### 常見錯誤狀況：
+
+- 400 Bad Request → 請求格式錯了（缺少欄位、資料型別錯）
+
+- 401 Unauthorized → 沒登入或 token 過期
+
+- 403 Forbidden → 有登入但沒權限（例如你不是管理員）
+
+- 404 Not Found → 網址錯、找不到資源
+
+- 500 Internal Server Error → 程式爆炸、資料庫出錯等
+
+---
+
+了解了打 API 背後的流程與原理後，是不是覺得它不再只是「拿資料的魔法黑盒」了呢？掌握 HTTP 請求和回應的格式與規則，不只讓你寫起 API 更順，也更容易和後端工程師溝通。下次遇到錯誤訊息或要串接新功能時，也能更快找出問題、順利解決。希望這篇文章能幫你把「打 API」變成一件理所當然、毫不費力的事情！

@@ -12,7 +12,11 @@
 10. Bom/ dom V
 11. 瀏覽器渲染流程 V
 12. design pattern V
-13. web worker V
+13. design pattern V
+14. design pattern V
+15. web worker V
+16. 狀態碼、GET vs Post V
+
 
 # 代辦
 
@@ -21,7 +25,7 @@
 3. mdn 轉文章
 4. docker
 5. Vite vs Webpack
-6. 狀態碼、GET vs Post、HTML 標籤語意與 SEO 關係
+6. HTML 標籤語意與 SEO 關係
 7. CSR vs SSR vsSSG
 8. html 無障礙
 9. 資料夾結構
@@ -31,6 +35,7 @@
 13. 檔案系統與權限
 14. WebSocket、SSE
 15. SEO優化
+16. cors
 
 # project
 
