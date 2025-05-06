@@ -16,6 +16,7 @@
 14. design pattern V
 15. web worker V
 16. 狀態碼、GET vs Post V
+17. side project - 詛咒辦公室同事
 
 
 # 代辦

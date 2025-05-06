@@ -1,0 +1,125 @@
+---
+title: OpenAI 串接與 redis 快取機制實作
+date: 2025-05-06
+category: project
+abstract: 這次的 side project 是個紓壓的網頁遊戲，讓你可以針對惹怒你的同事角色，點擊發洩怒氣，最終生成一句帶有幽默怒氣的詛咒語。這個專案除了前端互動設計，還整合了 OpenAI API 產生詛咒語，並使用 Redis 快取避免重複請求，控制成本。
+tags: [side project、OpenAi Api、Redis]
+---
+
+這次的 side project 是個紓壓的網頁遊戲，讓你可以針對惹怒你的同事角色，點擊發洩怒氣，最終生成一句帶有幽默怒氣的詛咒語。這個專案除了前端互動設計，還整合了 OpenAI API 產生詛咒語，並使用 Redis 快取避免重複請求，控制成本。
+
+起源是覺得有些同事實在是太討厭，剛好成為 side project 的靈感，又想試試串接 OpenAI API 因此生出了這個網頁。花了一兩個小時把心目中的討厭同事樣貌畫下來，如果雷同純屬巧合！
+
+[體驗請往這。](https://noroi.vercel.app/)
+
+[專案github請往這。](https://github.com/haru5386/shokuba-noroi)
+
+![17-2](/images/post/17-2.png)
+
+
+### 技術重點
+
+- 前端框架：React + TailwindCSS
+
+- API 串接：Next.js pages router + Route Handler
+
+- AI 生成功能：OpenAI GPT-4.1 nano API
+
+- 快取方案：Redis（使用 Upstash 雲端服務）
+
+- 音效與互動：Howler.js 播放點擊音效，點擊人物時出現動畫與掉落物
+
+### 核心功能開發細節
+
+1. 串接 OpenAI API
+
+選用 gpt-4.1-nano 看起來是最便宜的方案。
+
+![17-1](/images/post/17-1.png)
+
+open ai 的收費方式 input 和 output 都會算 token，所以 prompt 盡量精簡。
+
+outout 可以從參數 `max_tokens` 去調整，max_tokens: 60，代表最多回傳 60 個 tokens（通常約 40～50 中文字）。
+
+我這是只儲值了 5 美金，input output 都用 60 token 去算大概可以用到 190000 以上次，聽起來好像有點划算。再加上 Redis 快取可以大幅節省 token 使用量。
+
+`temperature` 是控制 OpenAI 模型「回應隨機程度」的參數。
+- temperature = 0：完全保守，幾乎每次都給你一樣的答案。
+- temperature = 1：比較隨機，語氣與措辭會比較多變。
+- temperature > 1：超級發散，可能語無倫次、不可靠。
+- 建議範圍：0.2 ~ 0.9（視用途調整）
+
+這個專案設定為 0.9。
+
+串接方式參考以下：
+```
+const prompt = `請用幽默但帶點怒氣的語氣，對一位${role}，根據怒氣值${rage}，給一句詛咒語（不要太長，繁體中文）`;
+
+const response = await axios.post(
+  'https://api.openai.com/v1/chat/completions',
+  {
+    model: 'gpt-4.1-nano',
+    messages: [{ role: 'user', content: prompt }],
+    max_tokens: 60,
+    temperature: 0.9,
+  },
+  {
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+  }
+);
+```
+
+2. 加上 Redis 快取
+
+為了節省 token 花費與加速回應，我們加入了 Redis 快取，我是用 [Upstash](https://console.upstash.com/) 提供的免費額度，所以每月超過 500k 次讀寫快取功能就不能用了。
+
+```
+import { Redis } from "@upstash/redis";
+
+// 從 Redis 取得快取
+const getFromRedis = async (key: string) => {
+  const encodedKey = encodeURIComponent(key);
+  const res = await redis.get(encodedKey)
+  return res
+};
+
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL!,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+});
+
+// 寫入 Redis
+const setToRedis = async (key: string, value: string, ttlSeconds = 86400) => {
+  const encodedKey = encodeURIComponent(key);
+  await redis.set(encodedKey, value, {ex: ttlSeconds});
+};
+
+```
+
+#### Redis / Upstash 快速介紹
+
+Redis 是一種基於記憶體的資料庫，常用於暫存與快取。他是個 key-value pair 的儲存方式，不像資料庫處理速度那麼久，很適合用來記憶快取。
+
+Upstash 是提供 Redis 雲端服務的供應商，支援 Serverless 架構。（Serverless：不用自己管理伺服器，雲端平台會自動幫你處理伺服器的部署、擴充與維護。）
+
+使用 @upstash/redis 可以免設定自動串接 Upstash Redis，非常適合部署在 Vercel 的 Next.js 專案，不用架設 Redis 實體伺服器，也幾乎不需設定，只有 env 要設定 apiKey。
+
+
+#### 學到的重點知識
+
+- 如何控制 OpenAI 回應的創意程度（temperature）
+
+- 什麼情境適合加入快取
+
+- 如何用 Redis 快取避免重複生成相同內容
+
+---
+
+#### 結語
+整個開發過程蠻療癒的，不只是實作上的學習，還順便發洩了不少壓力 😂。也更了解如何串接 OpenAI API、怎麼善用 Redis 快取來控制成本。如果你也曾經被某些同事惹得牙癢癢，不妨點進去點兩下，舒壓一下。下次有機會再來分享更多亂七八糟但實用(?)的 side project！
+
+
+
