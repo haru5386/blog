@@ -1,0 +1,265 @@
+---
+title: 從 JavaScript 到 TypeScript：一次搞懂 class 的完整用法
+date: 2025-05-07
+category: javascript
+abstract: 本文從最基本的 class 語法開始，帶你一步步認識 JavaScript 的物件導向寫法，包括建構子、方法、繼承、getter/setter、靜態屬性等用法，並延伸到 TypeScript 中的 private、protected、readonly 等修飾詞。無論你是在看 Vue 底層原始碼，還是想用 class 管理複雜邏輯，這篇筆記都能幫助你重新掌握 class 的核心概念與最佳實踐。
+tags: [javascript、class、OOP]
+---
+
+因為我在看 Vue 底層的寫法，所以先來複習一下 class 的用法，JavaScript 是物件導向語言（OOP）。class 是用來建立可以重複使用的物件模板，讓你可以快速建立很多功能一致的實例。class 是一種語法糖，背後仍然是以 JavaScript 原本的「原型（prototype）」機制運作的，是ES6（2015）才引入的。
+
+### class 的基本語法
+
+``` c
+class Person {
+  constructor(name, age) {
+    this.name = name
+    this.age = age
+  }
+
+  sayHello() {
+    console.log(`Hi, I'm ${this.name} and I'm ${this.age} years old.`)
+  }
+}
+
+const p = new Person('Alice', 25)
+p.sayHello() // 👉 Hi, I'm Alice and I'm 25 years old.
+
+```
+
+| 語法          | 用途                            |
+| ------------- | ------------------------------- |
+| `constructor` | 建構函式，建立實例時會自動呼叫  |
+| `this`        | 指向目前這個物件的實例          |
+| 實例方法      | `sayHello()` 是每個人都有的方法 |
+
+以上是最基本的用法， JavaScript 中 class 還有分公開 / 私有屬性（ES2022）
+
+#### 公開屬性
+
+```c
+class Dog {
+  name = 'Doggy'
+
+  bark() {
+    console.log(`${this.name} says woof`)
+  }
+}
+
+```
+
+#### 私有屬性（ES2022）
+
+```c
+class Secret {
+  #secret = '1234'  // 私有
+
+  showSecret() {
+    console.log(this.#secret)
+  }
+}
+
+```
+
+`#secret` 只能在 class 裡用，外部訪問會報錯！如果`console.log(Secret.#secret)`會得到錯誤提示跟你說他是私有屬性。
+
+```
+VM1208:8 Uncaught Error: Cannot read private member #secret from an object whose class did not declare it
+    at <anonymous>:8:13
+```
+
+#### 靜態屬性與方法（static）
+
+靜態成員屬於 class 本身，不屬於個別物件。意思是實例化後(new 後的實例)是取不到 static 屬性的。
+
+```c
+class Person {
+  static species = 'Human'
+
+  constructor(name) {
+    this.name = name
+  }
+
+  static getSpecies() {
+    return Person.species
+  }
+}
+
+console.log(Person.getSpecies()) // 'Human', 不需要建立實例就可用
+
+const Alice = new Person('Alice')
+console.log(Alice.species) // undefined
+
+```
+
+`static` 用來做「跟實例無關」的事情，例如：全部實例「共享」的資訊、工具方法（ex. 轉換、檢查格式）、工廠模式（建立不同實例）。我們再來看一個例子，用 static 做一個驗證工具：
+
+```c
+class Validator {
+  static isEmail(str: string): boolean {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(str)
+  }
+
+  static isStrongPassword(pwd: string): boolean {
+    return pwd.length >= 8 && /[A-Z]/.test(pwd) && /\d/.test(pwd)
+  }
+}
+
+// 用法：
+console.log(Validator.isEmail('test@example.com'))  // true
+console.log(Validator.isStrongPassword('abc'))      // false
+```
+
+#### 繼承與覆寫（extends / Override）
+
+##### 什麼是「繼承」與「覆寫」？
+-繼承：讓一個類別從「父類別」取得屬性與方法，不用重複寫
+
+-覆寫：讓子類別自行定義或改寫父類的行為
+
+```c
+class Animal {
+  constructor(name) {
+    this.name = name
+  }
+
+  speak() {
+    console.log(`${this.name} makes a sound`)
+  }
+}
+
+class Dog extends Animal {
+  speak() {
+    super.speak() // 呼叫父類別方法
+    console.log(`${this.name} barks`)
+  }
+}
+
+const dog = new Dog('Lucky')
+dog.speak()
+
+// Lucky makes a sound.
+// Lucky barks.
+```
+
+##### super 的用途
+- super():建構子中呼叫父類的 constructor，必須在 this 前面
+- super.method()：呼叫父類別的方法
+
+**建構子中必須呼叫 super() 才可用 this**
+
+```c
+class Cat extends Animal {
+  constructor(name: string) {
+    super(name) // ✅ 必須先呼叫 super，才可用 this
+    console.log(`A cat named ${this.name} was created.`)
+  }
+}
+```
+
+#### getter / setter
+
+
+get value()	讀取時執行，用來收集依賴
+set value(newVal)	設定時執行，用來更新值並觸發變化
+
+getter / setter 其實就是 vue ref 響應式的核心，Vue ref.value 會有「讀要追蹤、寫會通知」的行為，都是透過 get value() / set value() 包裝而來。
+
+```c
+class Test {
+  private _x = 1
+
+  get x() {
+    console.log('get 被叫了')
+    return this._x
+  }
+
+  set x(val: number) {
+    console.log('set 被叫了')
+    this._x = val
+  }
+}
+
+const t = new Test()
+console.log(t.x)    // get 被叫了 → 印出 1
+t.x = 99            // set 被叫了 → _x 變成 99
+```
+
+---
+
+### TS class 用法
+
+但如果寫成 TS 要怎麼寫呢？ TS 的修飾詞比起 JS 多了 `protected` 和 `readonly`
+
+我們先來了解一下修飾詞，TS 的修飾詞有四個
+- public：外部可存取，就是 JS 的 `this.name = 'x'`
+- private：僅 class 內可存取，JS 用 `#name = 'x'`，# 表示私有屬性
+- protected：僅 class 和子類別(用super)可存取，原生 JS 不支持，只能用 TS
+- readonly：唯讀屬性，建立後不能改，只能用 TS 但可以用 JS 模擬
+
+```c
+class Person {
+  public name: string         // 外部可存取
+  private age: number         // 僅 class 內可存取
+  protected gender: string    // 僅 class 和子類別可存取
+  readonly id: number         // 唯讀屬性，建立後不能改
+
+  constructor(name: string, age: number, gender: string, id: number) {
+    this.name = name
+    this.age = age
+    this.gender = gender
+    this.id = id
+  }
+
+  static species = 'human'   // 類別屬性，不屬於個別 instance
+}
+```
+
+再來看看使用結果：
+
+```c
+const p = new Person('Alice', 30, 'female', 1234)
+
+console.log(p.name)   // ✅ 'Alice'
+p.name = 'Bob'        // ✅ 可以修改
+
+console.log(p.id)     // ✅ 1234
+p.id = 5678           // ❌ Error：Cannot assign to 'id' because it is a read-only property
+
+console.log(p.age)    // ❌ Error：Property 'age' is private and only accessible within class 'Person'
+
+console.log(p.gender) // ❌ Error：Property 'gender' is protected and only accessible within class 'Person' and its subclasses
+```
+
+再來看看子類別使用時：
+```c
+class Employee extends Person {
+  constructor(name: string, age: number, gender: string, id: number) {
+    super(name, age, gender, id)
+    console.log(this.name)    // ✅ public → 可讀
+    console.log(this.gender)  // ✅ protected → 子類別可用
+    // console.log(this.age)  // ❌ private → 子類別也不能用
+  }
+}
+```
+
+最後我們再來整理一下 class 的各種用法：
+
+#### class 裡面可以放什麼？
+
+| 類型        | 說明                            | JS 支援          | TS 支援       |
+| ----------- | ------------------------------- | ---------------- | ------------- |
+| constructor | 建構子，建立物件時會被呼叫      | ✅               | ✅            |
+| method      | 普通的方法（function）          | ✅               | ✅            |
+| get/set     | 屬性的 getter 和 setter         | ✅               | ✅            |
+| public      | 公開屬性（TypeScript 限定語法） | ❌               | ✅            |
+| private     | 私有屬性，只能 class 內部使用   | ❌（新語法支援） | ✅            |
+| protected   | 受保護屬性，子類別也能用        | ❌               | ✅            |
+| readonly    | 唯讀屬性，不能修改（TS 限定）   | ❌               | ✅            |
+| static      | 類別屬性，不屬於實例            | ✅               | ✅            |
+| #private    | 真正的 JS 私有屬性（新標準）    | ✅               | （ES2022） ✅ |
+
+
+---
+
+雖然一般網站開發中，用到 class 的機會其實不高，因為大部分框架都幫你做掉需要用 class 的部分，但還是有些情況可以使用，像是複雜的商業邏輯、整合 axios / useFetch 等等 infra，或是有 TS 的專案搭配 class 可以寫出更結構化、可預測、可重用的程式碼。
