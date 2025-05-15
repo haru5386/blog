@@ -1,0 +1,765 @@
+---
+title: 前端元件封裝實戰：設計模式在 Vue 中的應用
+date: 2025-05-14
+category: framework
+abstract: 隨著前端專案規模擴大，元件數量與邏輯日益複雜，若未妥善封裝，容易導致樣式混亂、邏輯重複與維護困難。本文以實務範例為核心，結合設計模式觀念，說明元件封裝的三大原則：單一職責（SRP）、關注點分離（SoC）與可組合/可測試/可重用。接著透過實際專案架構，介紹從 Base、UI、Compound 到 Container 的元件分層策略，並說明 Composable 的合理拆分原則，幫助開發者建立清晰、有彈性的元件架構，提升大型專案的可維護性與擴展性。
+tags: [design pattern、Vue、元件封裝]
+---
+
+- [1. 前端組件封裝](#前端組件封裝)
+- [2. 元件封裝的核心原則](#元件封裝的核心原則)
+  - [2.1 單一職責（SRP）](#1-單一職責srp)
+  - [2.2 關注點分離 SoC（UI / State / Logic）](#2-關注點分離-socui--state--logic)
+  - [2.3 可組合、可測試、可重用](#3-可組合可測試可重用)
+- [3. 元件分層實作策略](#元件分層實作策略)
+- [4. Composable 拆分原則](#composable-拆分原則)
+- [5. 設計模式在元件封裝中的應用](#設計模式在元件封裝中的應用)
+
+---
+
+### 前端組件封裝
+
+前端專案變大，元件越來越多、邏輯越來越複雜，如果沒有良好封裝，會導致「樣式亂、邏輯重複、維護困難」，當然專案變大也有其他的解決方式，例如：Module Federation 去拆分模組，但我們這篇主要會來說明前端組件的封裝，利用 Design Pattern 的觀念，讓元件更清晰的方式。
+
+### 元件封裝的核心原則
+
+##### 1. 單一職責（SRP）
+
+> A module should have one, and only one, reason to change
+
+SRP 核心概念就是一個元件 / 模組，應該**只有一個改變的理由**。
+
+我舉一個表單的例子：
+
+```vue
+<template>
+  <form @submit="submit">
+    <input v-model="email" />
+    <input v-model="password" />
+    <button>Login</button>
+    <div v-if="loading">Loading...</div>
+    <div v-if="error">{{ error }}</div>
+  </form>
+</template>
+
+<script setup>
+import { ref } from 'vue';
+import axios from 'axios';
+
+const email = ref('');
+const password = ref('');
+const loading = ref(false);
+const error = ref('');
+
+async function submit() {
+  loading.value = true;
+  try {
+    await axios.post('/api/login', { email: email.value, password: password.value });
+  } catch (err) {
+    error.value = 'Login failed';
+  } finally {
+    loading.value = false;
+  }
+}
+</script>
+```
+
+我們仔細看看這個組件，既有表單狀態、API 呼叫、錯誤處理、UI 呈現，一個組件有太多職責。抱著 SRP 原則的話，我們可以怎麼做呢？我們可以把 **UI 呈現、狀態邏輯、API 請求**分開，讓他們分工明確。
+
+1. 封裝 API
+
+```ts
+// api/auth.ts
+import axios from 'axios';
+
+export async function login(email: string, password: string) {
+  return axios.post('/api/login', { email, password });
+}
+```
+
+2. composables 封裝狀態與 submit 行為
+
+```ts
+// composables/useLoginForm.ts
+import { ref } from 'vue';
+import { login } from '@/api/auth';
+
+export function useLoginForm() {
+  const email = ref('');
+  const password = ref('');
+  const loading = ref(false);
+  const error = ref('');
+
+  const submit = async () => {
+    loading.value = true;
+    error.value = '';
+    try {
+      await login(email.value, password.value);
+      // 可加入 redirect 或 emit 成功事件
+    } catch (err) {
+      error.value = 'Login failed';
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  return {
+    email,
+    password,
+    loading,
+    error,
+    submit,
+  };
+}
+```
+
+3. UI 呈現
+
+```vue
+//	LoginForm.vue
+<template>
+  <form @submit.prevent="submit">
+    <input v-model="email" placeholder="Email" />
+    <input v-model="password" type="password" placeholder="Password" />
+    <button :disabled="loading">Login</button>
+    <div v-if="loading">Loading...</div>
+    <div v-if="error" class="error">{{ error }}</div>
+  </form>
+</template>
+
+<script setup>
+import { useLoginForm } from '@/composables/useLoginForm';
+
+const { email, password, loading, error, submit } = useLoginForm();
+</script>
+```
+
+SRP 重點是**每個模組只負責一件事**。
+
+如何檢查自己寫的 component 有沒有違反 SPR 有幾個判斷方式：
+
+- 如果 UI 設計改了，我要不要動它？
+
+- 如果資料 API 改了，我要不要動它？
+
+- 如果業務邏輯改了，我要不要動它？
+
+如果答案是「都要動」，那你可能違反了 SRP。
+
+##### 2. 關注點分離 SoC（UI / State / Logic）
+
+> Separation of concerns is the idea that a program should be organized so that different kinds of functionality are isolated from each other.
+> —— Eric S. Raymond 《The Art of Unix Programming》
+
+Concern（關注點）是指一個系統中的某個功能領域、責任或邏輯面向。把它們分開處理（分層或模組化），就能降低耦合、提高維護性。
+
+常出現在整體架構設計上，例如前後端分離。而 SRP 通常是針對「單一模組/函式」的責任。
+
+我們延續上面的 `useLoginForm` 的例子，SRP 強調的是每個函式、每個模組應該只做一件事。SoC 強調系統不同關注點應在不同模組中管理（UI、邏輯、資料層分離）
+
+- UI 層：使用者互動、顯示錯誤、UI 控制，對應 `LoginForm.vue`
+
+- 邏輯層：驗證資料、控制 loading、封裝邏輯，對應 `useLoginForm.ts`
+
+- 資料層：發送登入 API、處理回傳資料，對應 `api/auth.ts`
+
+##### 3. 可組合、可測試、可重用
+
+最後一點，每個元件都能獨立運作、被測試、被組裝。
+
+
+---
+
+### 元件分層實作策略
+
+元件分層是為了讓程式碼減少耦合（每層只管自己的 concern）、促進重用（Base / UI 可跨多個 Compound 使用）、提升維護性（修改邏輯不會影響 UI 結構）。
+
+我們先用一張表簡單列出常見元件分層結構：
+
+| 層級               | 說明                 | 負責的 Concern（SoC）  | 對應的職責（SRP）             |
+| ---------------- | ------------------ | ----------------- | ---------------------- |
+| **Base 元件**      | 原子化、無邏輯的 UI 元素     | UI 呈現（視覺 concern） | 專注於最小 UI 單位，如按鈕的樣式與行為  |
+| **UI 元件**        | 將 base 組合成具語意的元件   | 較高層的 UI 結構        | 呈現 modal、table 等 UI 模組 |
+| **Compound 元件**  | 同時含 UI 組合與邏輯       | UI + 邏輯（例如表單流程）   | 對某個具體功能負責，如帶驗證的表單      |
+| **Container 元件** | 管理資料、觸發 API、串接狀態管理 | 業務邏輯、資料 concern   | 為整個頁面或流程組織並協調子元件       |
+
+實際舉一個例子來說，我們要呈現一頁產品列表。我們來思考一下會有哪些東西。
+1. 一定會有一個 Container 元件來包住所有東西，也可以說是一個 Page，組合所有 UI 和拿取 API 邏輯。
+2. 會有 composables 來管理 API 邏輯。
+3. 這個 Container 裡面會有一個 Compound 元件，來包 UI + 邏輯，但此處無需邏輯，所以會省略這個元件。
+4. 再來會有呈現產品清單 UI 的 元件。
+5. 以及 Base 元件，例如：可以按下購買的 Button、或單一產品的卡片。
+
+有了這些，我們可以開始構思資料夾結構：
+```
+pages/
+  ProductPage.vue   ← Container
+components/
+  product/
+    ProductList.vue       ← UI 元件
+    ProductCard.vue       ← Base 元件
+    ProductFilters.vue    ← UI 元件
+composables/
+  product/
+    useProductList.ts     ← API 邏輯
+```
+構思好我們就可以來實作：
+
+##### 1. ProductPage.vue（Container）
+
+```vue
+<script setup>
+import { ref } from 'vue'
+import { useProductList } from '@/composables/useProductList'
+import ProductList from '@/components/product/ProductList.vue'
+import ProductFilters from '@/components/product/ProductFilters.vue'
+
+const filters = ref({ category: '', priceRange: '' })
+const { products, loading, error } = useProductList(filters)
+</script>
+
+<template>
+  <ProductFilters v-model:filters="filters" />
+  <ProductList :products="products" :loading="loading" />
+  <div v-if="error">{{ error.message }}</div>
+</template>
+```
+
+職責：
+
+1. 頁面標題、布局
+
+2. 權限檢查（若需要）
+
+3. 引入 UI 元件 ProductList 、及 API 邏輯 `useProductList`
+
+##### 2. 拆分邏輯到 Composables
+
+```js
+// composables/useProductList.js
+import { ref, watch } from 'vue'
+import { fetchProducts } from '@/services/productApi'
+
+export function useProductList(filters) {
+  const products = ref([])
+  const loading = ref(false)
+  const error = ref(null)
+
+  const load = async () => {
+    loading.value = true
+    try {
+      products.value = await fetchProducts(filters.value)
+    } catch (err) {
+      error.value = err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  watch(filters, load, { immediate: true })
+
+  return { products, loading, error }
+}
+```
+
+職責：
+
+1. 打 API 及獲取產品資訊
+
+2. 管理 loading 狀態
+
+##### 3. ProductList.vue (UI 元件)
+```vue
+<script setup>
+defineProps({
+  products: Array,
+  loading: Boolean
+})
+</script>
+
+<template>
+  <div v-if="loading">Loading...</div>
+  <div v-else>
+    <ProductCard v-for="p in products" :key="p.id" :product="p" />
+  </div>
+</template>
+```
+
+職責：
+
+1. 純粹畫畫畫，不關心資料從哪來
+
+2. 不含 API / 狀態邏輯
+
+3. 可被其他頁面重複使用（如 Search 結果）
+
+##### 4. ProductCard.vue（Base 元件）
+
+```vue
+<template>
+  <div class="border p-4 rounded">
+    <h3>{{ product.name }}</h3>
+    <p>{{ product.price }} 元</p>
+  </div>
+</template>
+
+<script setup>
+defineProps({
+  product: {
+    type: Object,
+    required: true
+  }
+});
+</script>
+```
+
+職責：
+
+1. 最小顆粒的 UI 呈現
+
+###### 最後整理一下元件角色與分工
+| 元件                    | 負責內容                    | 分層角色              |
+| --------------------- | ----------------------- | ----------------- |
+| `ProductPage.vue`     | 管理頁面級邏輯 / 組合元件          | Container         |
+| `ProductList.vue` | 負責接收 props 畫畫          | UI 元件 |
+| `ProductCard.vue`     | 最小顆粒的 UI 卡片             | Base 元件      |
+| `useProductList.js` / `.ts` | Composable | 提供資料存取邏輯、API 封裝、狀態管理    |
+
+---
+
+#### Composable 拆分原則
+但當頁面變的更複雜時，只拆成一個 Composable 可能會讓他成為一隻巨獸：
+```ts
+export function useMonster() {
+  const form = ref({})
+  const showModal = ref(false)
+  const apiData = ref([])
+  const isLoading = ref(false)
+  // 各種 watch、事件
+  // 包含畫面控制、API 請求、副作用...
+}
+```
+
+這樣不易測試、不易維護，也不知道這 Composable 的目的，違反前面說的 SRP 原則。但如果「盲目地把所有邏輯都往外拆」，最後很容易出現一種情況 —— `Container.vue` 本來是想幫忙「分清邏輯與畫面」，結果變成了**「巨獸控制中心」**。
+
+```vue
+// ProductListPage.vue
+<script setup>
+import { useAuth } from '@/composables/useAuth'
+import { useFilters } from '@/composables/useFilters'
+import { useProducts } from '@/composables/useProducts'
+import { usePagination } from '@/composables/usePagination'
+import { useExportToCsv } from '@/composables/useExport'
+import { useLogger } from '@/composables/useLogger'
+...
+</script>
+```
+
+當專案越來越龐大時，有幾個**原則**可以幫助你判斷是否拆出 composable：
+
+**1. 拆 Composable 是針對 `Concern`，不是為了抽而抽**：抽出來的 Composable 每一個都應該「能獨立測試、在其他地方複用」，而不是變成 Container 的私人工具人。
+
+| 正確的抽法（好）                   | 錯誤的抽法（壞）                               |
+| -------------------------- | -------------------------------------- |
+| `useProductList`：關注資料讀取與分頁 | `usePageState`、`useTempState` → 沒有明確責任 |
+| `useProductFilter`：專注篩選邏輯  | `useAllLogic` → 只是把 logic 搬出去          |
+| `useFormSubmit`：專注處理送出與驗證  | `useEverything` → 包山包海的副作用邏輯           |
+
+**2. 若 Composable 數量多 → 抽出子 Container**：當一個 Container 管理過多協作（通常超過 4～5 個 Composable），你就可以把一段流程抽成一個子 Container 元件。
+
+如果會抽出這麼多：
+```ts// ProductListContainer.vue
+useProductList()
+useFilter()
+usePermission()
+useExport()
+useBulkActions()
+useTabState()
+useViewSetting()
+```
+
+可以考慮多個 container：
+```
+ProductListContainer.vue
+├── usePermission()
+├── ProductTableContainer.vue
+│   ├── useProductList()
+│   ├── useFilter()
+│   ├── useBulkActions()
+│   ├── useExport()
+└── ProductViewSettingContainer.vue
+    ├── useTabState()
+    ├── useViewSetting()
+```
+
+**3. 每個 Container 只關注一個「流程協調」**：
+- `ProductListContainer.vue`：協調篩選、列表、匯出
+
+- `ProductFormContainer.vue`：管理表單驗證與提交
+
+- `ProductViewSettingContainer.vue`：管理欄位顯示與使用者偏好設定
+
+**4. 多個 Composable 的組合再進一步封裝**：當你發現多個 Composable 總是成對使用（有耦合性），你就可以做成「進階型 Composable」，例如：
+```ts
+// useProductTable.ts
+export function useProductTable() {
+  const { list, loading } = useProductList()
+  const { selected, toggle } = useBulkActions()
+  const { exportCsv } = useExportCsv()
+
+  return {
+    list,
+    loading,
+    selected,
+    toggle,
+    exportCsv,
+  }
+}
+```
+
+這樣可以讓 `Container` 只呼叫 `useProductTable()`，避免太多小工具塞爆 `setup`。
+
+##### 什麼情況需要抽成 Composable 
+
+上面講述了拆分 Composable 的原則，但什麼情況要抽成 Composable 什麼不用呢？不是所有邏輯都要抽成 Composable，抽或不抽的關鍵在於：**「重複性、可測試性、獨立性、複雜性」**。
+
+我們直接用下面表格來比較：
+
+**- 抽成 Composable 的情境**
+| 情境                        | 原因與說明                                               | 範例                                        |
+| ------------------------- | --------------------------------------------------- | ----------------------------------------- |
+| **1. 可重複使用的邏輯**           | 若邏輯在多個頁面 / 組件中共用，抽出方便管理與維護                          | `useFormValidator`、`usePagination`        |
+| **2. 涉及副作用或狀態管理**         | 與 API 溝通、watch、localStorage、狀態轉移等副作用較多的邏輯，建議集中處理與測試 | `useFetchUserData()`、`useSyncTab()`       |
+| **3. 可獨立測試的流程**           | 該段邏輯有明確 I/O 或流程，可脫離 UI 存在，適合封裝成 function（符合 SRP）    | `useCart()`、`useAuth()`                   |
+| **4. 搭配其他 Composable 使用** | 如果你發現總是多個 Composable 成對出現，可以包成進階型 Composable        | `useProductTable()` 封裝 list/filter/export |
+
+**- 留在 Container 裡就好的情境**
+| 情境                 | 原因與說明                                  | 範例                                  |
+| ------------------ | -------------------------------------- | ----------------------------------- |
+| **1. 特定頁面專屬邏輯**    | 僅用在某頁面，沒有重複或共用的需求，未來維護成本低，沒必要抽         | `onSubmit()`、`toggleDrawer()`       |
+| **2. 簡單的狀態操作**     | `ref`、`boolean toggle`、單次操作等，抽出反而增加複雜度 | `const isOpen = ref(false)`         |
+| **3. 小範圍 UI 控制邏輯** | 只牽涉到 UI 呈現，跟資料無關，不會跟其他元件重用             | 控制 modal 顯示/隱藏、tooltip 狀態等          |
+| **4. 暫時性的狀態處理**    | 例如頁籤切換狀態、過場動畫 toggle 等，不需與其他元件協作       | `const activeTab = ref('info')`     |
+| **5. 一次性的資料格式處理**  | 僅為該頁面資料格式整理，未來共用可能性低                   | `const displayName = computed(...)` |
+
+---
+
+### 設計模式在元件封裝中的應用
+
+###### 1. 建構複雜 UI 組件時：用 Compound Component Pattern
+
+**情境**：表單巢狀很多欄位、步驟，需要父子協作，但不想用 props drilling。
+
+Compound Component Pattern  是一種由多個子元件組成的元件設計方式，這些子元件在邏輯上依賴「父元件的共享狀態或控制」。
+
+- 父元件（Compound root）負責提供共享邏輯和狀態
+
+- 子元件（Compound parts）透過 `provide/inject（Vue`）或 `context（React）` 取得這些狀態
+
+- 使用者可用 slot 組裝出自己的 UI 流程
+
+
+我們直接來實作多步驟驗證表單，先來看看如果沒有 Compound Component Pattern 我們可能會這樣寫：
+
+```vue
+<template>
+  <div>
+    <form @submit="handleSubmit">
+      <!-- Step 1: Basic Info Form -->
+      <BasicInfoForm v-if="step === 1" :data="formData" @next="nextStep" />
+      
+      <!-- Step 2: Confirm Form -->
+      <ConfirmForm v-if="step === 2" :data="formData" @prev="prevStep" @submit="submitForm" />
+    </form>
+    
+    <div v-if="loading">提交中...</div>
+    <div v-if="error">{{ error }}</div>
+  </div>
+</template>
+
+<script setup>
+import { ref } from 'vue';
+import BasicInfoForm from './BasicInfoForm.vue';
+import ConfirmForm from './ConfirmForm.vue';
+
+const step = ref(1);          // 當前步驟
+const formData = ref({});     // 儲存表單資料
+const loading = ref(false);   // 加載狀態
+const error = ref(null);      // 錯誤訊息
+
+// 處理表單提交
+const handleSubmit = async () => {
+  if (step.value === 1) {
+    // 當前是第 1 步，處理資料並跳到下一步
+    nextStep();
+  } else {
+    // 當前是第 2 步，提交表單
+    await submitForm();
+  }
+};
+
+// 下一步
+const nextStep = () => {
+  if (step.value === 1) {
+    step.value = 2;
+  }
+};
+
+// 上一步
+const prevStep = () => {
+  if (step.value === 2) {
+    step.value = 1;
+  }
+};
+
+// 提交表單
+const submitForm = async () => {
+  loading.value = true;
+  try {
+    // 假設這是提交表單的 API 請求
+    await fetch('/api/submit', {
+      method: 'POST',
+      body: JSON.stringify(formData.value),
+    });
+    // 提交成功
+    alert('提交成功!');
+  } catch (err) {
+    error.value = '提交失敗，請稍後再試';
+  } finally {
+    loading.value = false;
+  }
+};
+</script>
+
+```
+在這個結構中，父組件負責管理當前步驟的狀態 (step)，還處理表單資料 (formData)，並且需要根據不同的步驟顯示不同的表單元件，這樣的邏輯使得父元件變得非常臃腫。
+
+如果未來增加更多的步驟或更複雜的邏輯，父元件需要不斷增加條件分支，會讓代碼變得難以維護和擴展。而且父組件和`BasicInfoForm.vue`、`ConfirmForm.vue` 元件是緊密耦合的，會導致如果要修改部分邏輯（例如：BasicInfoForm變第三步驟），可能需要改動父元件的結構和其他步驟的渲染邏輯。
+
+當然這種寫法在步驟少，且邏輯簡單的情況，可以非常快速實現。如果需求越來越多的話，這樣的結構勢必不夠靈活。
+
+
+我們來看下有用 Compound Component Pattern 的方式，讓父元件 `<StepForm />` 管理多個子元件 `<StepForm.Step />` 的邏輯（例如目前第幾步、顯示哪一頁、按下一步時切換），而子元件只負責 UI 或小段邏輯。
+
+**Component 結構**
+
+`StepForm.vue`： 父元件，負責顯示哪一個步驟、管理當前 index、提供狀態
+
+子元件，用於包每個步驟的內容
+
+`BasicInfoForm.vue`, `ConfirmForm.vue`： 真正的內容表單元件
+
+父元件：
+```vue
+<!-- StepForm.vue -->
+<template>
+  <div>
+    <!-- 插入所有 <StepFormStep> -->
+    <slot />
+
+    <!-- 頁尾操作按鈕 -->
+    <div class="actions">
+      <button @click="prev" :disabled="currentStepIndex === 0">上一步</button>
+      <button @click="next" :disabled="currentStepIndex === steps.length - 1">下一步</button>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, provide } from 'vue'
+
+const steps = ref([]) // 收集所有 step 的 title 等資訊
+const currentStepIndex = ref(0)
+
+function registerStep(step) {
+  const index = steps.value.length
+  steps.value.push(step)
+  return index
+}
+
+// 提供 step 註冊與目前步驟 index
+provide('registerStep', registerStep)
+provide('currentStepIndex', currentStepIndex)
+
+function next() {
+  if (currentStepIndex.value < steps.value.length - 1) {
+    currentStepIndex.value++
+  }
+}
+function prev() {
+  if (currentStepIndex.value > 0) {
+    currentStepIndex.value--
+  }
+}
+</script>
+```
+
+`StepFormStep.vue`： 子元件，
+```vue
+<!-- StepFormStep.vue -->
+<template>
+  <div v-if="isActive">
+    <slot />
+  </div>
+</template>
+
+<script setup>
+import { ref, inject, onMounted, computed } from 'vue'
+
+const props = defineProps({
+  title: String
+})
+
+// 注入來自 StepForm 的 API
+const registerStep = inject('registerStep')
+const currentStepIndex = inject('currentStepIndex')
+
+const index = ref(-1)
+
+// 在掛載時註冊自己，並記住自己的 index
+onMounted(() => {
+  index.value = registerStep({ title: props.title })
+})
+
+// 判斷是否該顯示
+const isActive = computed(() => currentStepIndex.value === index.value)
+</script>
+
+```
+
+使用方式：
+``` vue
+<!-- 使用方式 -->
+<template>
+  <StepForm>
+    <StepFormStep title="基本資料">
+      <BasicInfoForm v-model="dataA" />
+    </StepFormStep>
+
+    <StepFormStep title="確認送出">
+      <ConfirmForm v-model="dataB" />
+    </StepFormStep>
+  </StepForm>
+</template>
+```
+
+這種使用方式彈性高，開發者可自訂插槽內容，邏輯集中管理在父元件控管流程與狀與狀態，UI 負責畫面渲染內容，步驟修改或動態增減步驟也相對容易。但缺點是實作較複雜，需要使用 provide/inject，不當使用會使程式碼更難以理解。
+
+
+###### 2. 管理大量動態元件時：用 Factory / Abstract Factory Pattern
+
+**情境**：根據 type 動態產生元件（例如 Dashboard、表單欄位）。每個元件的渲染方式不同，但都可接受一樣的 props，不需要彼此有複雜邏輯交互（像驗證、依賴控制）。
+
+舉例來說：Schema-based 表單欄位產生器
+```js
+const fieldComponentMap = {
+  input: TextField,
+  select: SelectField,
+  checkbox: CheckboxField,
+  textarea: TextareaField,
+}
+```
+```vue
+<component
+  v-for="field in formSchema"
+  :key="field.name"
+  :is="fieldComponentMap[field.type]"
+  v-model="formModel[field.name]"
+  v-bind="field.props"
+/>
+```
+
+像這樣快速渲染大量相似欄位就很適合使用。當「componentMap」不是寫死，而是由外部資料決定元件如何組裝時，可以加上 Abstract Factory，根據外部設定，決定如何組成元件。
+
+```js
+function createWidgetFactory(widgetType) {
+  switch (widgetType) {
+    case 'chart':
+      return (data) => h(ChartWidget, { data })
+    case 'video':
+      return (data) => h(VideoWidget, { src: data.url })
+  }
+}
+```
+
+###### 3. Strategy Pattern（策略模式）
+用途：當元件內部行為會根據參數不同而改變時，用策略模式來封裝這些變化。
+舉例：
+```js
+// 在 Notification 元件中依通知類型決定顯示文案
+const strategies = {
+  deposit: () => `入金成功`,
+  withdraw: () => `出金成功`,
+  rejected: () => `出金被拒絕`,
+};
+
+const renderText = strategies[type] ? strategies[type]() : '未知通知';
+```
+
+###### 4. Factory Pattern（工廠模式）
+用途：動態產生元件或元件邏輯，避免寫死。
+
+舉例：根據表單 schema 自動生成表單元件。
+```js
+function createField(fieldType: string): Component {
+  switch (fieldType) {
+    case 'text': return TextField;
+    case 'select': return SelectField;
+    case 'date': return DateField;
+    default: return UnknownField;
+  }
+}
+```
+###### 5. Observer Pattern（觀察者模式）
+用途：像 toast、notify、modal 等全局共享狀態的情境。
+
+舉例：透過事件總線或 reactive store 監聽狀態變化。
+```js
+// NotificationStore
+const notifications = ref<NotifyData[]>([]);
+
+function addNotify(n: NotifyData) {
+  notifications.value.push(n);
+}
+```
+###### 6. Proxy Pattern（代理模式）
+用途：當你需要根據不同的權限來控制某些組件的顯示或行為時，可以使用 Proxy Pattern。這個模式可以讓你動態地控制對象的行為，根據當前用戶的權限來代理對應的功能。
+
+舉例：有一個需要根據用戶角色來控制顯示的頁面內容。
+```js
+// userPermissions.js 用戶權限數據
+export const userPermissions = {
+  admin: ['edit', 'view', 'delete'],
+  user: ['view']
+}
+
+export function useUserPermissions(role) {
+  return {
+    canEdit: userPermissions[role]?.includes('edit') ?? false,
+    canView: userPermissions[role]?.includes('view') ?? false,
+    canDelete: userPermissions[role]?.includes('delete') ?? false
+  }
+}
+```
+
+```vue
+<template>
+  <div>
+    <button v-if="canEdit">Edit</button>
+    <button v-if="canDelete">Delete</button>
+    <div v-if="canView">View Content</div>
+  </div>
+</template>
+
+<script setup>
+import { useUserPermissions } from './userPermissions'
+
+const role = 'admin'  // 假設當前用戶是 admin
+const { canEdit, canView, canDelete } = useUserPermissions(role)
+</script>
+```
+
+---
+### 結語
+
+元件的封裝一直都是個滿值得討論的議題，就算整理出了一些準則，遇上不同的團隊、不同的人，可能就會有不同的寫法。我有看過把元件封裝做到極致的人，一個 Container 進去可能要點十層才找的到最小 UI 元件，反而讓程式碼更難讀取，也遇過完全不封裝直接寫在頁面上長達 1000 行的程式碼，程式碼高度耦合到不敢改動。如何封裝也是需要經驗累積的，沒有一個正確的解答，只有依當下天時地利人和來說，最好的解答。

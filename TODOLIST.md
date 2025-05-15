@@ -17,6 +17,8 @@
 15. web worker V
 16. 狀態碼、GET vs Post V
 17. side project - 詛咒辦公室同事
+18. 從 JavaScript 到 TypeScript：一次搞懂 class 的完整用法
+19. 前端Component 封裝與Design Pattern的最佳實踐
 
 
 # 代辦
@@ -31,12 +33,24 @@
 8. html 無障礙
 9. 資料夾結構
 10. vue 底層寫法
-11. clean code
+11. clean code / SOLID
 12. react rerender 機制
 13. 檔案系統與權限
 14. WebSocket、SSE
 15. SEO優化
 16. cors
+17. 模組化設計、微前端
+18. LCP CLS
+19. PWA
+20. rag 自己爬資料
+21. Polling / WebSocket / WebRTC
+22. SOAP / RESTful / GraphQL / gRPC
+23. Web Security:分享常見 Web 攻擊：XSS、CSRF、Clickjacking 、防範方式（CSP、SameSite cookie、input sanitation）
+24. Web 常見的 Authorization / Authentication
+25.  Service Communications:可舉例：frontend ↔ backend、微服務之間如何傳資料、可補充：同步 vs 非同步，API gateway、事件驅動架構
+26. Clean Architecture
+
+
 
 # project
 
