@@ -1,0 +1,308 @@
+---
+title: Nuxt SSR 與 Hydration 完整解析：從流程、陷阱到最佳實踐
+date: 2025-05-19
+category: framework
+abstract: 當我們使用 Nuxt 建立 SSR（Server Side Rendering）應用時，雖然能大幅提升首屏速度與 SEO 友善度，但在瀏覽器啟用 Vue 應用前，畫面仍是靜態的。這個從「靜態 HTML」變成「可互動應用」的過程，正是 hydration 的關鍵任務。
+tags: [Hydration、Nuxt、SSR]
+---
+
+### 為什麼需要 hydration？
+
+當使用 SSR 時，Nuxt 會在伺服器上生成 HTML 給瀏覽器，這樣可以**加快首屏加載速度（SEO 友好）**，但這時頁面上的互動（像點擊按鈕、打開 modal）還不能用，因為瀏覽器還沒加載對應的 Vue 邏輯。
+
+Hydration 的目的是：
+
+- 讓這個 HTML 變成真正的 Vue 應用，**附上事件監聽器、響應式資料等功能**。
+
+- 對使用者來說，畫面看起來已經「好了」，互動功能也會在幾百毫秒內完成啟用。
+
+### Hydration 的過程（以 Nuxt 為例）
+
+Hydration 的過程（以 Nuxt 為例）
+
+###### 1.Server Side Rendering（SSR）：
+
+- Nuxt 在伺服器上根據路由、資料抓取、組件等生成靜態 HTML。
+
+- 同時也把應用狀態（如 props、Vuex/Pinia 狀態、asyncData 的結果）序列化成 **JSON** 注入頁面中。
+
+```js
+// 在 server
+const { data } = await useFetch('/api/posts') // 會真的去打 API
+
+// Nuxt 會把 `data` 放進 HTML 裡，如下：
+<script type="application/json" id="__NUXT__">
+{
+  "data": {
+    "some-key": { posts: [...] } // 打好的 API 結果
+  }
+}
+</script>
+
+// client hydration 時，Vue 組件會直接拿這段資料，不會再打一次 API
+```
+
+###### 2. 瀏覽器收到 HTML：
+
+- 使用者看到的是「可視的靜態 HTML」，但這時還不能互動（事件監聽器尚未註冊）。
+
+###### 3. Nuxt 客戶端加載：
+
+- 瀏覽器下載 JavaScript bundle（Vue runtime + 應用程式邏輯）。
+
+###### 4. Hydration 發生：
+
+- Vue 會「比對」伺服器生成的 DOM 和客戶端模板 render 出來的 DOM，確保一致性。
+
+- 若一致，Vue 就會掛上事件監聽器、響應式系統等，頁面變得可互動。
+
+- 若不一致（例如 SSR 和 client 渲染結果不同），Vue 會警告 hydration mismatch，有可能會強制重建該部分 DOM。
+
+###### 5. 頁面進入互動狀態：
+
+- 此時所有 Vue 的功能（click、watch、computed、emit 等）都可正常使用。
+
+#### hydration mismatch
+
+- SSR 和 CSR 渲染結果必須一致。否則會出現警告或 UI 異常。
+
+- 例如使用 `Date.now()`、`Math.random()`、`window`、`localStorage` 等只能在 client 存取的東西時，要小心。
+
+解法：
+
+- 使用 `<ClientOnly> `包起來
+
+- 使用 `process.client` 判斷是否在 client 執行
+
+### Nuxt SSR + Hydration 整體流程圖
+
+```
+Server：
+- 執行組件邏輯（setup、asyncData、useFetch）
+- 生成靜態 HTML
+- 將資料 JSON 注入頁面（__NUXT__ state）
+
+⭣ 傳送 HTML + JSON 到 Client
+
+Client：
+- 加載 HTML
+- 加載 JS bundle
+- Hydration 過程：
+   - 比對 DOM 結構
+   - 掛上事件 & 響應系統
+   - 用 __NUXT__ state 避免重複打 API
+- 應用變得可互動
+```
+
+---
+
+#### 實例說明
+
+我們知道 `setup()` 同時會在 server 跟 client 各執行一次
+
+- **在 server 渲染階段**：Nuxt 會跑 `setup()`，把結果用來 render HTML。
+
+- **在 client hydration 階段**：瀏覽器端會再次執行 `setup()`，但這次不 render HTML，而是建立響應系統、事件綁定等，完成 hydration。
+
+一般來說，在 server 打過 api 拿過的資料，client 就不會在打一次，假設我們有一個頁面，要抓熱門文章 `/api/hot-posts`
+
+```vue
+<script setup>
+// 這段會在 server 端執行（也會在 client 端執行 hydration 時再次執行）
+const { data, pending } = await useFetch('/api/hot-posts')
+</script>
+
+<template>
+  <div>
+    <h1>🔥 熱門文章</h1>
+    <ul v-if="!pending">
+      <li v-for="post in data" :key="post.id">{{ post.title }}</li>
+    </ul>
+  </div>
+</template>
+```
+
+###### Server 端會怎麼做？
+
+執行 `useFetch('/api/hot-posts')`，打 API 拿資料。
+
+```json
+[
+  { "id": 1, "title": "Hydration 是什麼？" },
+  { "id": 2, "title": "Vue 的 reactivity 原理" }
+]
+```
+
+用這些資料 render 出 HTML：
+
+```html
+<ul>
+  <li>Hydration 是什麼？</li>
+  <li>Vue 的 reactivity 原理</li>
+</ul>
+```
+
+同時，把資料存進 __NUXT__ hydration payload：
+```html
+<script id="__NUXT__" type="application/json">
+{
+  "data": {
+    "hot-posts-key": [ { "id": 1, "title": "..." }, ... ]
+  }
+}
+</script>
+```
+
+###### Client 端會怎麼做？
+
+1. 頁面載入時，Vue 檢查 `__NUXT__` 中是否已有資料。
+
+2. 有的話，不會重新打 API，直接使用 hydration state。
+
+3. `useFetch()` 檢查已存在的 cache，直接回傳資料。
+
+4. 完成 hydration、啟用互動性（事件監聽、ref 反應式等）。
+
+---
+
+但是，有些情況下 server 和 client 兩邊都要打一次 API：
+
+比較常見的情況是，**資料跟「使用者身分或狀態」有關。**
+
+- 登入使用者資訊存在 cookie 或 token 中
+
+- Server 打 API 用伺服器的 cookie
+
+- Client hydration 後需要根據 client 狀態再打一次確認登入或重新取得
+
+比方說，server side 沒登入，但 client side 有登入，畫面會有差別，這時就會 出現 hydration mismatch。或是Server SSR 使用伺服器 cookie，Client 端 hydration 時，可能因為 token 過期、cookie 不存在或切換 user，需要再確認一次
+
+```vue
+<!-- pages/profile.vue -->
+<script setup>
+import { useFetch } from '#app'
+import { onMounted } from 'vue'
+import { useUserStore } from '~/stores/user'
+
+// Server 端：使用伺服器 cookie 打 API 拿使用者資訊
+const { data: user, refresh } = await useFetch('/api/user', {
+  key: 'user',
+  server: true,  // Server SSR 階段會打
+  lazy: false,
+  default: () => null,
+})
+
+// client hydration 後再打一次 API 取得最新狀態
+onMounted(async () => {
+  const { status } = await refresh()
+  console.log('[Client Refresh] /api/user status:', status)
+  // ➕ 更新 Pinia store 或本地 state
+  if (user.value) {
+    useUserStore().setUser(user.value)
+  }
+})
+</script>
+
+<template>
+  <div>
+    <h1>會員中心</h1>
+    <p v-if="user">Hi, {{ user.name }}</p>
+    <p v-else>尚未登入</p>
+  </div>
+</template>
+```
+
+你可以加上 flag 比對結果，避免重複 request 或加 loading 狀態：
+
+```
+onMounted(async () => {
+  const oldUser = user.value?.id
+  const { data: newUser } = await refresh()
+  if (newUser.value?.id !== oldUser) {
+    console.log('Client user info updated:', newUser.value)
+  }
+})
+```
+
+- `server/api/user.ts` 驗證 JWT（Nuxt API route）
+
+```ts
+// 假設這是從 cookie 驗證 token 拿到 user 資訊
+export default defineEventHandler(async (event) => {
+  const token = getCookie(event, 'access_token')
+  if (!token) return null
+  const payload = verify(token) // ← 驗證 JWT
+  return { id: payload.sub, name: payload.name }
+})
+
+```
+
+補充說明一下如何帶上 cookie：瀏覽器才能自動附帶 cookie，Server 不行自動，但可以「自己手動取得」然後「自己附帶上去」。
+
+```
+🧑 使用者 (Browser)
+    |
+    | ① 請求畫面 GET /dashboard
+    |    ⬆️ Cookie 會被自動附加在 request headers 裡
+    ↓
+🌐 Nuxt Server (Node.js 環境)
+    |
+    | ② 接收到 request → 開始 SSR
+    |    在 <script setup> 或 asyncData/useFetch 觸發資料獲取邏輯
+    |
+    | ③ 在 useFetch 中用 `useRequestHeaders(['cookie'])` 或 `getCookie` 拿 cookie
+    |    手動加到 `$fetch` headers 裡：等於自己幫 request 加 cookie
+    ↓
+📦 Nuxt API Route (`/api/user`)
+    |
+    | ④ 驗證 cookie 裡的 JWT → 回傳 user 資料
+    ↓
+🌐 Nuxt Server
+    |
+    | ⑤ SSR 結束，把 HTML（含 user 資料）送給瀏覽器
+    ↓
+🧑 使用者 (Browser)
+    |
+    | ⑥ 開始 hydration，client-side 的 Vue 啟動
+    |    如果 useFetch 沒有 cache，就會再打一次 API（自動帶 cookie）
+    ↓
+📦 Nuxt API Route
+    |
+    | ⑦ 驗證 cookie，再次回傳 user 資料
+```
+
+如果 JWT 沒有存在 cookie ，而已有存在 localStorage 的話該怎麼做呢？server side 不能獲取寸在 localStorage 的 token，但可以在 middleware client 先去獲取 localStorage 存在 pinia，這樣在 server 就可以去獲取 token。
+
+
+這段會在 client-side 時，將 localStorage 裡的 token 存進 Pinia。
+
+```ts
+// middleware/auth.global.ts
+
+export default defineNuxtRouteMiddleware((to, from) => {
+  if (process.client) {
+    const token = localStorage.getItem('access_token')
+    const userStore = useUserStore()
+
+    if (token && !userStore.token) {
+      userStore.setToken(token)
+    }
+  }
+})
+
+```
+
+接著，在頁面中這樣使用：
+
+```ts
+const userStore = useUserStore()
+
+await useFetch('/api/user', {
+  headers: {
+    Authorization: `Bearer ${userStore.token}`
+  }
+})
+```
+
+#### 結語
+Hydration 是 Nuxt SSR 很重要的觀念，理解 hydration 的流程、資料傳遞機制與 client-server 不一致的狀況，可以避免程式碼 Crush 的機率。特別注意 client-only 的資料來源（如 localStorage）與 server side 的 cookie 串接方式。掌握 useFetch 的執行時機、useRequestHeaders 的使用方式，在實作會有很大的幫助。

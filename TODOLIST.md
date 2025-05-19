@@ -19,6 +19,7 @@
 17. side project - 詛咒辦公室同事
 18. 從 JavaScript 到 TypeScript：一次搞懂 class 的完整用法
 19. 前端Component 封裝與Design Pattern的最佳實踐
+20. vue Hydration
 
 
 # 代辦
